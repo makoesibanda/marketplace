@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Page title -->
+  <title>Seller Dashboard | Marketplace</title>
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+  <!--
+    NAVIGATION BAR
+    Provides quick access to buyer view and logout
+  -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+
+      <!-- Brand / Home link -->
+      <a class="navbar-brand" href="/">
+        Marketplace
+      </a>
+
+      <!-- User actions -->
+      <div class="d-flex align-items-center gap-3">
+        <span class="text-light">
+          Logged in as <strong><%= currentUser.email %></strong>
+        </span>
+
+        <a href="/buyer" class="btn btn-secondary btn-sm">
+          GO BUY
+        </a>
+
+        <a href="/logout" class="btn btn-outline-light btn-sm">
+          Logout
+        </a>
+      </div>
+
+    </div>
+  </nav>
+
+  <!--
+    MAIN DASHBOARD CONTENT
+  -->
+  <div class="container mt-4">
+
+    <!--
+      DASHBOARD HEADER
+      Includes page title and quick action to post a new item
+    -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+      <div>
+        <h2 class="fw-bold mb-1">Seller Dashboard</h2>
+        <p class="text-muted mb-0">
+          Post items, track approvals, and manage your selling activity
+        </p>
+      </div>
+
+      <!-- Trigger for item creation modal -->
+      <button
+        type="button"
+        class="btn btn-primary btn-lg mt-3 mt-md-0"
+        data-bs-toggle="modal"
+        data-bs-target="#postItemModal"
+      >
+        + Post New Item
+      </button>
+    </div>
+
+    <!--
+      SUMMARY CARDS
+      Quick overview of seller activity
+    -->
+    <div class="row g-3 mb-4">
+
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Total Items</div>
+            <div class="fs-4 fw-bold"><%= counts.total %></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Pending</div>
+            <div class="fs-4 fw-bold"><%= counts.pending %></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Approved</div>
+            <div class="fs-4 fw-bold"><%= counts.approved %></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Rejected</div>
+            <div class="fs-4 fw-bold"><%= counts.rejected %></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!--
+      SEARCH & FILTER FORM
+      Allows sellers to search by keyword and filter by item status
+    -->
+    <form method="GET" action="/seller">
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+
+          <div class="row g-2 align-items-center">
+
+            <!-- Keyword search -->
+            <div class="col-md-6">
+              <input
+                type="text"
+                name="q"
+                class="form-control"
+                placeholder="Search your items (title, keyword)..."
+                value="<%= (query && query.q) ? query.q : '' %>"
+              >
+            </div>
+
+            <!-- Status filter -->
+            <div class="col-md-3">
+              <select name="status" class="form-select">
+                <option value="" <%= (!query || !query.status) ? 'selected' : '' %>>
+                  All statuses
+                </option>
+                <option value="pending" <%= (query && query.status === 'pending') ? 'selected' : '' %>>
+                  Pending
+                </option>
+                <option value="approved" <%= (query && query.status === 'approved') ? 'selected' : '' %>>
+                  Approved
+                </option>
+                <option value="rejected" <%= (query && query.status === 'rejected') ? 'selected' : '' %>>
+                  Rejected
+                </option>
+              </select>
+            </div>
+
+            <!-- Submit -->
+            <div class="col-md-3 d-grid">
+              <button type="submit" class="btn btn-outline-dark">
+                Search
+              </button>
+            </div>
+
+          </div>
+
+          <div class="text-muted small mt-2">
+            Tip: leave blank to show all items and always check the filter
+          </div>
+
+        </div>
+      </div>
+    </form>
+
+    <!--
+      ITEM LISTING SECTION
+    -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="fw-semibold mb-0">Your Items</h5>
+    </div>
+
+    <div class="row g-3">
+
+      <!-- Empty state -->
+      <% if (items.length === 0) { %>
+        <div class="col-12">
+          <div class="alert alert-info">
+            No items found!
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Item cards -->
+      <% items.forEach(item => { %>
+
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm <%= item.status === 'rejected' ? 'border-danger' : '' %>">
+
+            <!-- Item image (fallback applied server-side) -->
+            <div class="item-image-frame">
+              <img
+                src="<%= item.cover_image ? item.cover_image : '/images/seller_cover.png' %>"
+                class="card-img-top"
+                alt="Item image"
+              >
+            </div>
+
+            <div class="card-body">
+
+              <!-- Title and status -->
+              <div class="d-flex justify-content-between align-items-start">
+  <h5 class="card-title mb-1">
+    <%= item.title %>
+  </h5>
+
+  <% if (item.status === 'pending') { %>
+    <span class="badge bg-warning text-dark">Pending</span>
+
+  <% } else if (item.status === 'approved') { %>
+    <span class="badge bg-success">Approved</span>
+
+  <% } else if (item.status === 'sold') { %>
+    <span class="badge bg-secondary">Sold</span>
+
+  <% } else { %>
+    <span class="badge bg-danger">Rejected</span>
+  <% } %>
+</div>
+
+
+              <!-- Short description -->
+              <p class="card-text text-muted mt-2">
+                <%= item.description.length > 80
+                  ? item.description.substring(0, 80) + "..."
+                  : item.description
+                %>
+              </p>
+
+              <!-- Rejection reason (only shown when applicable) -->
+              <% if (item.status === 'rejected' && item.rejection_reason) { %>
+                <div class="alert alert-danger mt-2 py-2 small">
+                  <strong>Reason:</strong>
+                  <%= item.rejection_reason %>
+                </div>
+              <% } %>
+
+              <!-- Price and actions -->
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="fw-bold">
+                  £<%= item.price %>
+                </div>
+
+                <div class="d-flex gap-2">
+
+                  <a href="/items/<%= item.id %>" class="btn btn-outline-primary btn-sm">
+                    View
+                  </a>
+
+                  <!-- Edit allowed only for pending items -->
+                  <% if (item.status === 'pending') { %>
+                    <a
+                      href="/seller/items/<%= item.id %>/edit"
+                      class="btn btn-outline-dark btn-sm"
+                    >
+                      Edit
+                    </a>
+                  <% } else { %>
+                    <button class="btn btn-outline-dark btn-sm" disabled>
+                      Edit
+                    </button>
+                  <% } %>
+
+                  <% if (item.status === 'approved') { %>
+  <button
+    type="button"
+    class="btn btn-outline-success btn-sm"
+    data-bs-toggle="modal"
+    data-bs-target="#soldItemModal-<%= item.id %>"
+  >
+    Mark as Sold
+  </button>
+<% } %>
+
+<div
+  class="modal fade"
+  id="soldItemModal-<%= item.id %>"
+  tabindex="-1"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title text-success fw-bold">
+          Mark Item as Sold
+        </h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <p>
+          Are you sure you want to mark
+          <strong>"<%= item.title %>"</strong>
+          as sold?
+        </p>
+
+        <p class="text-muted small mb-0">
+          Buyers will no longer see this item.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-dismiss="modal"
+        >
+          Cancel
+        </button>
+
+        <form
+          method="POST"
+          action="/seller/items/<%= item.id %>/sold"
+        >
+          <button type="submit" class="btn btn-success">
+            Yes, Mark as Sold
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+                  <!-- Delete (server enforces pending-only rule) -->
+                 <button
+  type="button"
+  class="btn btn-outline-danger btn-sm"
+  data-bs-toggle="modal"
+  data-bs-target="#deleteItemModal-<%= item.id %>"
+>
+  Delete
+</button>
+
+<!-- DELETE ITEM MODAL -->
+<div
+  class="modal fade"
+  id="deleteItemModal-<%= item.id %>"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <!-- Modal header -->
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger">
+          Delete Item (Only Pending can be deleted)
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <p class="mb-2">
+          Are you sure you want to delete
+          <strong>"<%= item.title %>"</strong>?
+        </p>
+
+        <p class="text-muted small mb-0">
+          This action is permanent and cannot be undone.
+        </p>
+      </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-dismiss="modal"
+        >
+          Cancel
+        </button>
+
+        <!-- REAL DELETE FORM -->
+        <form
+          method="POST"
+          action="/seller/items/<%= item.id %>/delete"
+        >
+          <button type="submit" class="btn btn-danger">
+            Yes, Delete Item
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="card-footer text-muted small">
+              Posted: <%= new Date(item.created_at).toLocaleDateString() %>
+            </div>
+
+          </div>
+        </div>
+
+      <% }) %>
+
+    </div>
+
+  </div>
+
+  <!--
+    POST ITEM MODAL
+    Used for creating new listings without leaving the dashboard
+  -->
+  <div
+    class="modal fade"
+    id="postItemModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">
+            Post a New Item
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form
+          method="POST"
+          action="/seller/items/create"
+          enctype="multipart/form-data"
+        >
+          <div class="modal-body">
+
+            <div class="row g-3">
+
+              <div class="col-md-6">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-control" name="title" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Price</label>
+                <input type="number" step="0.01" class="form-control" name="price" required>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" name="description" rows="4" required></textarea>
+              </div>
+
+              <div class="col-md-6">
+  <label class="form-label">Contact phone (optional)</label>
+  <input
+    type="text"
+    name="phone"
+    class="form-control"
+    placeholder="+44 7xxx xxx xxx"
+  >
+</div>
+
+<div class="col-md-6">
+  <label class="form-label">Location (optional)</label>
+  <input
+    type="text"
+    name="location"
+    class="form-control"
+    placeholder="e.g. Lewisham, SE14"
+  >
+</div>
+
+
+              <div class="col-12">
+                <label class="form-label">Upload images (max 3)</label>
+                <input type="file" class="form-control" name="images" accept="image/*" multiple>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Submit Item
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

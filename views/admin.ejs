@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard | Marketplace</title>
+
+  <!-- Bootstrap CSS for layout and components -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Custom application styles -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+  <!-- 
+    ADMIN NAVBAR
+    Displays admin branding, logged-in admin identity,
+    and a secure logout action
+  -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+
+      <!-- Admin brand / home link -->
+      <a class="navbar-brand fw-bold" href="/admin">
+        Marketplace Admin
+      </a>
+
+      <!-- Logged-in admin info and logout -->
+      <div class="text-light d-flex align-items-center gap-3">
+        <span class="small">
+          Logged in as <strong><%= currentUser.email %></strong>
+        </span>
+
+        <a href="/logout" class="btn btn-outline-light btn-sm">
+          Logout
+        </a>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="container mt-4">
+
+    <!-- Page heading -->
+    <h2 class="fw-bold mb-1">
+      Admin Dashboard
+    </h2>
+
+    <p class="text-muted mb-4">
+      Monitor activity and moderate marketplace listings.
+    </p>
+
+    <!-- 
+      PLATFORM STATISTICS
+      High-level overview of item states across the marketplace
+    -->
+    <div class="row g-3 mb-4">
+
+      <!-- Pending items -->
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-warning">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">
+              Pending Items
+            </h6>
+
+            <h3 class="fw-bold text-warning mb-0">
+              <%= stats.pending %>
+            </h3>
+
+            <small class="text-muted">
+              Awaiting review
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approved items -->
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-success">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">
+              Approved Items
+            </h6>
+
+            <h3 class="fw-bold text-success mb-0">
+              <%= stats.approved %>
+            </h3>
+
+            <small class="text-muted">
+              Live on marketplace
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rejected items -->
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-danger">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">
+              Rejected Items
+            </h6>
+
+            <h3 class="fw-bold text-danger mb-0">
+              <%= stats.rejected %>
+            </h3>
+
+            <small class="text-muted">
+              Feedback sent to sellers
+            </small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-12 col-md-3">
+  <div class="card shadow-sm border-secondary">
+    <div class="card-body">
+      <div class="text-muted small">Sold</div>
+      <div class="fs-4 fw-bold text-secondary">
+        <%= stats.sold %>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- 
+      PRIMARY ADMIN ACTION
+      Direct access to item moderation workflow
+    -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body d-flex justify-content-between align-items-center">
+
+        <div>
+          <h5 class="mb-1 fw-bold">
+            Item Moderation
+          </h5>
+
+          <p class="text-muted mb-0">
+            Review and manage seller submissions.
+          </p>
+        </div>
+
+        <a href="/admin/items" class="btn btn-primary">
+          Go to Moderation
+        </a>
+
+      </div>
+    </div>
+
+    <a href="/admin/settings" class="btn btn-outline-secondary">
+  Marketplace Settings
+</a>
+
+
+    <!-- 
+      ADMIN GUIDELINES
+      Clarifies system rules and moderation consequences
+    -->
+    <div class="card shadow-sm">
+      <div class="card-body">
+
+        <h6 class="fw-bold mb-2">
+          Admin Guidelines
+        </h6>
+
+        <ul class="small text-muted mb-0">
+          <li>Only approved items are visible to buyers</li>
+          <li>Rejected items include a reason visible to sellers</li>
+          <li>Moderation actions are permanent</li>
+        </ul>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

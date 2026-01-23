@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login</title>
+
+  <!-- Bootstrap for layout and basic styling -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Project-wide custom styles -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body class="bg-light">
+
+  <!-- 
+    Full-height container to vertically and horizontally center
+    the admin login card on the screen
+  -->
+  <div class="container vh-100 d-flex align-items-center justify-content-center">
+
+    <!-- 
+      Login card is intentionally narrow to keep focus
+      and visually separate admin access from normal users
+    -->
+    <div class="card shadow-sm" style="max-width: 420px; width: 100%;">
+      <div class="card-body">
+
+        <!-- Page heading -->
+        <h4 class="text-center mb-3 fw-bold">
+          Admin Access
+        </h4>
+
+        <!-- Subtext clarifying restricted access -->
+        <p class="text-center text-muted mb-4">
+          Authorized personnel only
+        </p>
+
+        <!-- 
+          Display server-side authentication errors if present.
+          This block is rendered only when an error variable exists.
+        -->
+        <% if (typeof error !== "undefined") { %>
+          <div class="alert alert-danger">
+            <%= error %>
+          </div>
+        <% } %>
+
+        <!-- 
+          Admin login form.
+          Submits credentials securely via POST to the admin login route.
+        -->
+        <form method="POST" action="/admin/login">
+
+          <!-- Email field -->
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              name="email"
+              class="form-control"
+              required
+            >
+          </div>
+
+          <!-- Password field -->
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input
+              type="password"
+              name="password"
+              class="form-control"
+              required
+            >
+          </div>
+
+          <!-- Submit button -->
+          <button type="submit" class="btn btn-dark w-100">
+            Login as Admin
+          </button>
+
+        </form>
+
+        <!-- Navigation back to public marketplace -->
+        <div class="text-center mt-3">
+          <a href="/" class="small text-muted">
+            Back to Marketplace
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

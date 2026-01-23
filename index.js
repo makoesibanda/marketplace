@@ -1,0 +1,1094 @@
+// Load environment variables
+require("dotenv").config();
+
+const fs = require("fs"); // for file deletion from the local storage 
+
+
+const express = require("express");
+const path = require("path");
+const mysql = require("mysql2/promise");
+const bcrypt = require("bcrypt");
+const session = require("express-session");
+
+const multer = require("multer"); // for umage upload
+
+
+const app = express();
+
+/*
+  =========================
+  EXPRESS CONFIGURATION
+  =========================
+*/
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: true }));
+
+/*
+  =========================
+  SESSION CONFIGURATION
+  =========================
+*/
+app.use(
+  session({
+    secret: "marketplace_secret_key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 // 1 hour
+    }
+  })
+);
+
+// Make logged-in user available in all views
+app.use((req, res, next) => {
+  res.locals.currentUser = req.session.user || null;
+  next();
+});
+
+/*
+  =========================
+  DATABASE CONNECTION
+  =========================
+*/
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+});
+
+global.db = db;
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads/items");
+  },
+  filename: (req, file, cb) => {
+    const uniqueName =
+      Date.now() + "-" + Math.round(Math.random() * 1e9) + "-" + file.originalname;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage
+});
+
+
+
+/*
+  =========================
+  AUTH MIDDLEWARE
+  =========================
+*/
+
+// Normal users only (buyer/seller)
+function requireUser(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+
+  if (req.session.user.is_admin === 1) {
+    return res.redirect("/admin");
+  }
+
+  next();
+}
+
+// Admin only
+function requireAdmin(req, res, next) {
+  if (!req.session.user || req.session.user.is_admin !== 1) {
+    return res.redirect("/admin/login");
+  }
+  next();
+}
+
+function requireAuth(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+  next();
+}
+
+
+
+/*
+  =========================
+  PUBLIC ROUTES
+  
+  =========================
+*/
+app.get("/", async (req, res) => {
+  try {
+    const [rows] = await db.execute(
+      "SELECT site_name, site_description FROM settings WHERE id = 1 LIMIT 1"
+    );
+
+    const settings = rows.length
+      ? rows[0]
+      : { site_name: "Marketplace", site_description: "" };
+
+    res.render("index", {
+      siteName: settings.site_name,
+      siteDescription: settings.site_description
+    });
+  } catch (err) {
+    console.error(err);
+    res.render("index", {
+      siteName: "Marketplace",
+      siteDescription: ""
+    });
+  }
+});
+
+app.get("/explore", (req, res) => {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+
+  if (req.session.user.is_admin === 1) {
+    return res.redirect("/admin");
+  }
+
+  res.redirect("/buyer");
+});
+
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
+app.get("/register", (req, res) => {
+  res.render("register", { formData: {} });
+});
+
+
+
+/*
+  =========================
+  USER DASHBOARDS
+  =========================
+*/
+app.get("/buyer", requireUser, async (req, res) => {
+  try {
+    const q = req.query.q || "";
+
+    let sql = `
+      SELECT
+        i.id,
+        i.title,
+        i.price,
+        i.description,
+        COALESCE(
+          (
+            SELECT image_path
+            FROM item_images
+            WHERE item_id = i.id
+              AND image_path IS NOT NULL
+              AND image_path != ''
+            LIMIT 1
+          ),
+          '/images/seller_cover.png'
+        ) AS cover_image
+      FROM items i
+      WHERE i.status IN ('approved', 'sold')
+
+    `;
+
+    const params = [];
+
+    // keyword search (SAME LOGIC AS SELLER)
+    if (q) {
+      sql += " AND (i.title LIKE ? OR i.description LIKE ?)";
+      params.push(`%${q}%`, `%${q}%`);
+    }
+
+    sql += " ORDER BY i.created_at DESC";
+
+    const [items] = await db.execute(sql, params);
+
+    res.render("buyer", {
+      items,
+      query: { q }
+    });
+
+  } catch (err) {
+    console.error("Buyer dashboard error:", err);
+    res.render("buyer", {
+      items: [],
+      query: {}
+    });
+  }
+});
+
+app.post("/items/:id/buy", requireUser, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+    const buyerId = req.session.user.id;
+
+    // Only approved items can be bought
+    const [items] = await db.execute(
+      `
+      SELECT id
+      FROM items
+      WHERE id = ? AND status = 'approved'
+      LIMIT 1
+      `,
+      [itemId]
+    );
+
+    if (items.length === 0) {
+      return res.redirect("/buyer");
+    }
+
+    // Mark as sold
+    await db.execute(
+      `
+      UPDATE items
+      SET status = 'sold',
+          buyer_id = ?,
+          sold_at = NOW()
+      WHERE id = ?
+      `,
+      [buyerId, itemId]
+    );
+
+    res.redirect("/buyer");
+
+  } catch (err) {
+    console.error("Buy item error:", err);
+    res.redirect("/buyer");
+  }
+});
+
+
+app.get("/go-sell", requireUser, (req, res) => {
+  res.redirect("/seller");
+});
+
+app.get("/seller", requireUser, async (req, res) => {
+  try {
+    const sellerId = req.session.user.id;
+
+    const q = req.query.q || "";
+    const status = req.query.status || "";
+
+
+    // Fetch seller items
+    let sql = `
+   SELECT 
+    i.id,
+    i.title,
+    i.description,
+    i.price,
+    i.status,
+    i.rejection_reason,
+    i.created_at,
+    (
+      SELECT image_path 
+      FROM item_images 
+      WHERE item_id = i.id 
+      LIMIT 1
+    ) AS cover_image
+  FROM items i
+  WHERE i.seller_id = ?
+
+`;
+
+const params = [sellerId];
+
+// keyword search
+if (q) {
+  sql += " AND (i.title LIKE ? OR i.description LIKE ?)";
+  params.push(`%${q}%`, `%${q}%`);
+}
+
+// status filter
+if (status) {
+  sql += " AND i.status = ?";
+  params.push(status);
+}
+
+sql += " ORDER BY i.created_at DESC";
+
+const [items] = await db.execute(sql, params);
+
+
+    // Summary counts
+    const [counts] = await db.execute(
+      `
+      SELECT
+        COUNT(*) AS total,
+        SUM(status = 'pending') AS pending,
+        SUM(status = 'approved') AS approved,
+        SUM(status = 'rejected') AS rejected
+      FROM items
+      WHERE seller_id = ?
+      `,
+      [sellerId]
+    );
+
+   res.render("seller", {
+  items,
+  counts: counts[0],
+  query: { q, status }
+});
+
+
+  } catch (error) {
+    console.error("Seller dashboard error:", error);
+    res.render("seller", {
+      items: [],
+      counts: { total: 0, pending: 0, approved: 0, rejected: 0 }
+    });
+  }
+});
+
+
+// Create new item
+app.post(
+  "/seller/items/create",
+  requireUser,
+  upload.array("images", 3),
+  async (req, res) => {
+    try {
+      const {
+        title,
+        description,
+        price,
+        phone,
+        location
+      } = req.body;
+
+      const sellerId = req.session.user.id;
+
+      // Basic validation
+      if (!title || !description || !price) {
+        return res.send("Missing required fields");
+      }
+
+      // Insert item including contact details
+      const [result] = await db.execute(
+        `
+        INSERT INTO items
+          (seller_id, title, description, price, phone, location)
+        VALUES
+          (?, ?, ?, ?, ?, ?)
+        `,
+        [
+          sellerId,
+          title,
+          description,
+          price,
+          phone || null,
+          location || null
+        ]
+      );
+
+      const itemId = result.insertId;
+
+      // Save uploaded images (if any)
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const imagePath = "/uploads/items/" + file.filename;
+
+          await db.execute(
+            `
+            INSERT INTO item_images (item_id, image_path)
+            VALUES (?, ?)
+            `,
+            [itemId, imagePath]
+          );
+        }
+      }
+
+      res.redirect("/seller");
+
+    } catch (err) {
+      console.error("Item creation error:", err);
+      res.send("Failed to create item");
+    }
+  }
+);
+
+app.get("/items/:id", requireAuth, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+
+    // Fetch item details together with seller contact info
+const [[item]] = await db.execute(
+  `
+  SELECT
+    i.*,
+    u.email AS seller_email
+  FROM items i
+  JOIN users u ON i.seller_id = u.id
+  WHERE i.id = ?
+  LIMIT 1
+  `,
+  [itemId]
+);
+
+
+    if (!item) {
+      return res.redirect("/seller");
+    }
+
+    // all images
+  let [images] = await db.execute(
+  "SELECT image_path FROM item_images WHERE item_id = ?",
+  [itemId]
+);
+
+// IMPORTANT: fallback for items with no images
+if (images.length === 0) {
+  images = [
+    { image_path: "/images/seller_cover.png" }
+  ];
+}
+
+    res.render("item-view", {
+      item,
+      images
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.redirect("/seller");
+  }
+});
+
+/*
+  =========================
+  SELLER – EDIT ITEM (GET)
+  =========================
+*/
+app.get("/seller/items/:id/edit", requireUser, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+    const sellerId = req.session.user.id;
+
+    // 1. Fetch item and ensure it belongs to this seller
+    const [items] = await db.execute(
+      `
+      SELECT *
+      FROM items
+      WHERE id = ? AND seller_id = ?
+      LIMIT 1
+      `,
+      [itemId, sellerId]
+    );
+
+    // If item not found or not owned by seller
+    if (items.length === 0) {
+      return res.redirect("/seller");
+    }
+
+    const item = items[0];
+
+    // 2. Only allow editing of PENDING items
+    if (item.status !== "pending") {
+      return res.redirect("/seller");
+    }
+
+    // 3. Fetch item images
+    const [images] = await db.execute(
+      `
+      SELECT id, image_path
+      FROM item_images
+      WHERE item_id = ?
+      `,
+      [itemId]
+    );
+
+    // 4. Render edit page
+    res.render("edit-item", {
+      item,
+      images
+    });
+
+  } catch (err) {
+    console.error("Edit item GET error:", err);
+    res.redirect("/seller");
+  }
+});
+
+app.post(
+  "/seller/items/:id/edit",
+  requireUser,
+  upload.array("images"),
+  async (req, res) => {
+    const itemId = req.params.id;
+    const sellerId = req.session.user.id;
+    const { title, price, description, remove_images } = req.body;
+
+    try {
+      // 1. Ensure item belongs to seller AND is pending
+      const [items] = await db.execute(
+        `
+        SELECT * FROM items
+        WHERE id = ? AND seller_id = ? AND status = 'pending'
+        LIMIT 1
+        `,
+        [itemId, sellerId]
+      );
+
+      if (items.length === 0) {
+        return res.redirect("/seller");
+      }
+
+      // 2. Update item details
+      await db.execute(
+        `
+        UPDATE items
+        SET title = ?, price = ?, description = ?
+        WHERE id = ?
+        `,
+        [title, price, description, itemId]
+      );
+
+      // 3. Remove selected images (if any)
+      if (remove_images) {
+        const imagesToRemove = Array.isArray(remove_images)
+          ? remove_images
+          : [remove_images];
+
+        await db.execute(
+          `
+          DELETE FROM item_images
+          WHERE id IN (${imagesToRemove.map(() => "?").join(",")})
+          AND item_id = ?
+          `,
+          [...imagesToRemove, itemId]
+        );
+      }
+
+      // 4. Add newly uploaded images (if any)
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const imagePath = "/uploads/items/" + file.filename;
+
+          await db.execute(
+            `
+            INSERT INTO item_images (item_id, image_path)
+            VALUES (?, ?)
+            `,
+            [itemId, imagePath]
+          );
+        }
+      }
+
+      // 5. Redirect back to seller dashboard
+      res.redirect("/seller");
+
+    } catch (error) {
+      console.error("Edit item error:", error);
+      res.redirect("/seller");
+    }
+  }
+);
+
+app.post("/seller/items/:id/delete", requireUser, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+    const sellerId = req.session.user.id;
+
+    // 1. Ensure item belongs to seller AND is pending
+    const [items] = await db.execute(
+      "SELECT id FROM items WHERE id = ? AND seller_id = ? AND status = 'pending'",
+      [itemId, sellerId]
+    );
+
+    if (items.length === 0) {
+      return res.redirect("/seller");
+    }
+
+    // 2. Get image paths from DB (ONLY real uploaded images exist here)
+    const [images] = await db.execute(
+      "SELECT image_path FROM item_images WHERE item_id = ?",
+      [itemId]
+    );
+
+    // 3. Delete uploaded image files from disk (never touch /images/seller_cover.png)
+    for (const img of images) {
+      const imagePath = img.image_path || "";
+
+      // extra safety: skip default + skip empty
+      if (!imagePath || imagePath === "/images/seller_cover.png") continue;
+
+      const filePath = path.join(__dirname, "public", imagePath);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // 4. Delete images from DB
+    await db.execute("DELETE FROM item_images WHERE item_id = ?", [itemId]);
+
+    // 5. Delete item
+    await db.execute("DELETE FROM items WHERE id = ?", [itemId]);
+
+    res.redirect("/seller");
+  } catch (err) {
+    console.error("Delete item error:", err);
+    res.redirect("/seller");
+  }
+});
+
+/*
+  =========================
+  SELLER – MARK ITEM AS SOLD
+  =========================
+*/
+app.post("/seller/items/:id/sold", requireUser, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+    const sellerId = req.session.user.id;
+
+    // Ensure item belongs to seller AND is approved
+    const [items] = await db.execute(
+      `
+      SELECT id
+      FROM items
+      WHERE id = ?
+        AND seller_id = ?
+        AND status = 'approved'
+      LIMIT 1
+      `,
+      [itemId, sellerId]
+    );
+
+    if (items.length === 0) {
+      return res.redirect("/seller");
+    }
+
+    // Mark item as sold
+    await db.execute(
+      `
+      UPDATE items
+      SET status = 'sold',
+          sold_at = NOW()
+      WHERE id = ?
+      `,
+      [itemId]
+    );
+
+    res.redirect("/seller");
+
+  } catch (err) {
+    console.error("Mark as sold error:", err);
+    res.redirect("/seller");
+  }
+});
+
+
+
+
+
+/*
+  =========================
+  ADMIN ROUTES
+  =========================
+
+
+*/
+
+/*
+  =========================
+  ADMIN – VIEW ALL ITEMS
+  =========================
+*/
+app.get("/admin/items", requireAdmin, async (req, res) => {
+  try {
+    const status = req.query.status || "";
+
+    let sql = `
+      SELECT
+        i.id,
+        i.title,
+        i.price,
+        i.status,
+        i.created_at,
+        u.email AS seller_email,
+        (
+          SELECT image_path
+          FROM item_images
+          WHERE item_id = i.id
+          LIMIT 1
+        ) AS cover_image
+      FROM items i
+      JOIN users u ON i.seller_id = u.id
+      WHERE 1 = 1
+    `;
+
+    const params = [];
+
+    // status filter
+    if (status) {
+      sql += " AND i.status = ?";
+      params.push(status);
+    }
+
+    sql += " ORDER BY i.created_at DESC";
+
+    const [items] = await db.execute(sql, params);
+
+    res.render("admin-items", {
+      items,
+      query: { status }
+    });
+
+  } catch (err) {
+    console.error("Admin items error:", err);
+    res.render("admin-items", {
+      items: [],
+      query: {}
+    });
+  }
+});
+
+
+app.get("/admin/login", (req, res) => {
+  res.render("admin-login");
+});
+
+app.post("/admin/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const [rows] = await db.execute(
+      "SELECT * FROM users WHERE email = ? AND is_admin = 1 LIMIT 1",
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return res.render("admin-login", {
+        error: "Invalid admin credentials"
+      });
+    }
+
+    const admin = rows[0];
+    const match = await bcrypt.compare(password, admin.password);
+
+    if (!match) {
+      return res.render("admin-login", {
+        error: "Invalid admin credentials"
+      });
+    }
+
+    /*
+  =====================================
+  ADMIN SETTINGS – VIEW SETTINGS PAGE
+  =====================================
+  This route allows an admin to view and edit
+  marketplace-wide settings such as:
+  - Marketplace name
+  - Marketplace description
+
+  These values are stored in the `settings` table
+  and are used across the public-facing site.
+*/
+app.get("/admin/settings", requireAdmin, async (req, res) => {
+  try {
+    // Fetch current marketplace settings (single row system)
+    const [[settings]] = await db.execute(
+      `
+      SELECT site_name, site_description
+      FROM settings
+      WHERE id = 1
+      LIMIT 1
+      `
+    );
+
+    // Render settings page with current values
+    res.render("admin-settings", {
+      settings
+    });
+
+  } catch (err) {
+    // If anything goes wrong, log it and return admin safely
+    console.error("Failed to load admin settings:", err);
+    res.redirect("/admin");
+  }
+});
+
+
+/*
+  =====================================
+  ADMIN SETTINGS – UPDATE SETTINGS
+  =====================================
+  This route handles saving updates made by the admin
+  to the marketplace configuration.
+
+  Once saved:
+  - Homepage title updates
+  - Marketplace description updates
+  - Branding changes are reflected immediately
+*/
+app.post("/admin/settings", requireAdmin, async (req, res) => {
+  try {
+    const { site_name, site_description } = req.body;
+
+    // Update marketplace configuration
+    await db.execute(
+      `
+      UPDATE settings
+      SET site_name = ?, site_description = ?
+      WHERE id = 1
+      `,
+      [site_name, site_description]
+    );
+
+    // Re-fetch updated values to confirm save
+    const [[settings]] = await db.execute(
+      `
+      SELECT site_name, site_description
+      FROM settings
+      WHERE id = 1
+      LIMIT 1
+      `
+    );
+
+    // Render page again with success feedback
+    res.render("admin-settings", {
+      settings,
+      success: "Marketplace settings updated successfully."
+    });
+
+  } catch (err) {
+    // Log error and keep admin in control
+    console.error("Failed to update admin settings:", err);
+    res.redirect("/admin/settings");
+  }
+});
+
+
+    // =========================
+// ADMIN – APPROVE ITEM
+// =========================
+app.post("/admin/items/:id/approve", requireAdmin, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+
+    // Update item status to approved
+    await db.execute(
+      "UPDATE items SET status = 'approved' WHERE id = ?",
+      [itemId]
+    );
+
+    // Redirect back to admin items page
+    res.redirect("/admin/items");
+
+  } catch (err) {
+    console.error("Approve item error:", err);
+    res.redirect("/admin/items");
+  }
+});
+
+// =========================
+// ADMIN – REJECT ITEM
+// =========================
+app.post("/admin/items/:id/reject", requireAdmin, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+    const { reason } = req.body;
+
+    // NEVER allow undefined to reach MySQL
+    const safeReason =
+      reason && reason.trim() !== "" ? reason : null;
+
+    await db.execute(
+  `
+  UPDATE items
+  SET status = 'rejected',
+      rejection_reason = ?
+  WHERE id = ?
+  `,
+  [req.body.reason || null, req.params.id]
+);
+
+
+    res.redirect("/admin/items");
+
+  } catch (err) {
+    console.error("Reject item error:", err);
+    res.redirect("/admin/items");
+  }
+});
+
+    // Admin session
+    req.session.user = {
+      id: admin.id,
+      email: admin.email,
+      is_admin: 1
+    };
+
+    res.redirect("/admin");
+  } catch (err) {
+    console.error(err);
+    res.render("admin-login", {
+      error: "Something went wrong. Please try again."
+    });
+  }
+});
+
+app.get("/admin", requireAdmin, async (req, res) => {
+  try {
+    const [stats] = await db.execute(`
+      SELECT
+  COUNT(*) AS total,
+  SUM(status = 'pending') AS pending,
+  SUM(status = 'approved') AS approved,
+  SUM(status = 'sold') AS sold,
+  SUM(status = 'rejected') AS rejected
+FROM items;
+
+    `);
+
+    res.render("admin", {
+      stats: stats[0]
+    });
+
+  } catch (err) {
+    console.error("Admin dashboard stats error:", err);
+
+    // Fallback so page never breaks
+    res.render("admin", {
+      stats: {
+        pending: 0,
+        approved: 0,
+        rejected: 0
+      }
+    });
+  }
+});
+
+
+/*
+  =========================
+  USER REGISTRATION
+  =========================
+*/
+app.post("/register", async (req, res) => {
+  const { full_name, email, password, confirm_password } = req.body;
+
+  try {
+    if (!full_name || !email || !password || !confirm_password) {
+      return res.render("register", {
+        error:'sAll fields are required.',
+        formData: { full_name, email }
+      });
+    }
+
+    if (password.length < 4) {
+      return res.render("register", {
+        error: "Password must be at least 4 characters long.",
+        formData: { full_name, email }
+      });
+    }
+
+    if (password !== confirm_password) {
+      return res.render("register", {
+        error: "Passwords do not match.",
+        formData: { full_name, email }
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.execute(
+      "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)",
+      [full_name, email, hashedPassword]
+    );
+
+    res.render("register", {
+      success: "Registration successful. You can now log in.",
+      formData: {}
+    });
+  } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.render("register", {
+        error: "This email is already registered.",
+        formData: { full_name, email }
+      });
+    }
+
+    console.error(err);
+    res.render("register", {
+      error: "Something went wrong. Please try again.",
+      formData: { full_name, email }
+    });
+  }
+});
+
+/*
+  =========================
+  USER LOGIN
+  =========================
+*/
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const [rows] = await db.execute(
+      "SELECT * FROM users WHERE email = ? LIMIT 1",
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return res.render("login", {
+        error: "Invalid email or password."
+      });
+    }
+
+    const user = rows[0];
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.render("login", {
+        error: "Invalid email or password."
+      });
+    }
+
+  
+    // Normal user session
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      is_admin: 0
+    };
+
+    res.redirect("/buyer");
+  } catch (err) {
+    console.error(err);
+    res.render("login", {
+      error: "Something went wrong. Please try again."
+    });
+  }
+});
+
+/*
+  =========================
+  LOGOUT (ADMIN + USERS)
+  =========================
+*/
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/");
+  });
+});
+
+/*
+  =========================
+  START SERVER
+  =========================
+*/
+const PORT = process.env.PORT || 8000;
+
+app.listen(PORT, () => {
+  console.log("Server running on http://localhost:" + PORT);
+});

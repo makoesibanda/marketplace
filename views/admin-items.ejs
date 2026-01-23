@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin | Item Moderation</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand" href="/admin">Admin Panel</a>
+
+      <div class="d-flex gap-2">
+        <a href="/admin" class="btn btn-secondary btn-sm">Dashboard</a>
+        <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="container mt-4">
+
+    <!-- FILTER -->
+<form method="GET" action="/admin/items">
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+      <div class="row g-2 align-items-center">
+
+        <div class="col-md-9">
+          <select name="status" class="form-select">
+            <option value="" <%= (!query || !query.status) ? 'selected' : '' %>>
+              All items
+            </option>
+            <option value="pending" <%= (query && query.status === 'pending') ? 'selected' : '' %>>
+              Pending
+            </option>
+            <option value="approved" <%= (query && query.status === 'approved') ? 'selected' : '' %>>
+              Approved
+            </option>
+            <option value="rejected" <%= (query && query.status === 'rejected') ? 'selected' : '' %>>
+              Rejected
+            </option>
+            <option value="sold" <%= (query && query.status === 'sold') ? 'selected' : '' %>>
+  Sold
+</option>
+
+          </select>
+        </div>
+
+        <div class="col-md-3 d-grid">
+          <button class="btn btn-outline-dark">
+            Apply Filter
+          </button>
+        </div>
+
+      </div>
+
+      <div class="small text-muted mt-2">
+        Tip: filter by status to focus moderation work
+      </div>
+
+    </div>
+  </div>
+</form>
+
+
+    <h2 class="fw-bold mb-3">Item Moderation</h2>
+    <p class="text-muted">
+      Review seller submissions and approve or reject items before they appear to buyers.
+    </p>
+
+    <% if (items.length === 0) { %>
+      <div class="alert alert-info mt-4">
+        No items submitted yet.
+      </div>
+    <% } %>
+
+    <div class="row g-3 mt-2">
+
+      <% items.forEach(item => { %>
+        <div class="col-12 col-md-6 col-lg-4">
+
+          <div class="card h-100 shadow-sm">
+
+            <!-- IMAGE -->
+            <div class="item-image-frame">
+              <img
+                src="<%= item.cover_image ? item.cover_image : '/images/seller_cover.png' %>"
+                class="card-img-top"
+                alt="Item image"
+              >
+            </div>
+
+            <div class="card-body">
+
+              <h5 class="card-title mb-1">
+                <%= item.title %>
+              </h5>
+
+              <div class="small text-muted mb-2">
+                Seller: <strong><%= item.seller_email %></strong>
+              </div>
+
+              <!-- STATUS -->
+             <% if (item.status === 'pending') { %>
+  <span class="badge bg-warning text-dark">Pending</span>
+<% } else if (item.status === 'approved') { %>
+  <span class="badge bg-success">Approved</span>
+<% } else if (item.status === 'sold') { %>
+  <span class="badge bg-secondary">Sold</span>
+<% } else if (item.status === 'rejected') { %>
+  <span class="badge bg-danger">Rejected</span>
+<% } %>
+
+
+              <div class="fw-bold text-primary mt-2">
+                £<%= item.price %>
+              </div>
+
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="card-footer bg-light">
+
+              <div class="d-flex gap-2">
+
+                <a
+                  href="/items/<%= item.id %>"
+                  class="btn btn-outline-primary btn-sm w-100">
+                  View
+                </a>
+
+                <% if (item.status === 'pending') { %>
+
+                  <form
+                    method="POST"
+                    action="/admin/items/<%= item.id %>/approve"
+                    class="w-100">
+                    <button class="btn btn-success btn-sm w-100">
+                      Approve
+                    </button>
+                  </form>
+
+                  <!-- Reject button opens modal -->
+                  <button
+                    class="btn btn-danger btn-sm w-100"
+                    data-bs-toggle="modal"
+                    data-bs-target="#rejectModal-<%= item.id %>">
+                    Reject
+                  </button>
+
+                <% } %>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- REJECT MODAL -->
+        <div
+          class="modal fade"
+          id="rejectModal-<%= item.id %>"
+          tabindex="-1">
+
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+              <form
+                method="POST"
+                action="/admin/items/<%= item.id %>/reject">
+
+                <div class="modal-header">
+                  <h5 class="modal-title">Reject Item</h5>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                  </button>
+                </div>
+
+                <div class="modal-body">
+                  <p class="text-muted small mb-2">
+                    Please provide a reason. This will be shown to the seller.
+                  </p>
+
+                  <textarea
+                    name="reason"
+                    class="form-control"
+                    rows="3"
+                    placeholder="e.g. Poor image quality, unclear description"
+                    required></textarea>
+                </div>
+
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    data-bs-dismiss="modal">
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    class="btn btn-danger">
+                    Confirm Reject
+                  </button>
+                </div>
+
+              </form>
+
+            </div>
+          </div>
+        </div>
+
+      <% }) %>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

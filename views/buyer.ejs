@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Buyer Dashboard | Marketplace</title>
+
+  <!-- Bootstrap for layout, grid system, and components -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Application-specific styles -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+  <!--
+    MAIN NAVIGATION BAR
+    Shows marketplace branding, logged-in buyer identity,
+    and quick access to selling or logout
+  -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+
+      <!-- Marketplace brand -->
+      <a class="navbar-brand fw-bold" href="/">
+        Marketplace
+      </a>
+
+      <!-- User actions -->
+      <div class="d-flex align-items-center gap-3">
+
+        <!-- Logged-in buyer information -->
+        <span class="text-light small">
+          Logged in as <strong><%= currentUser.email %></strong>
+        </span>
+
+        <!-- Switch to seller dashboard -->
+        <form method="GET" action="/go-sell" class="d-inline">
+          <button class="btn btn-success btn-sm">
+            SELL SOMETHING
+          </button>
+        </form>
+
+        <!-- Logout -->
+        <a href="/logout" class="btn btn-outline-light btn-sm">
+          Logout
+        </a>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="container mt-4">
+
+    <!-- PAGE HEADER -->
+    <div class="mb-3">
+      <h2 class="fw-bold mb-1">
+        Browse Listings
+      </h2>
+
+      <p class="text-muted mb-0">
+        Discover all items available on the marketplace
+      </p>
+    </div>
+
+    <!--
+      SEARCH FORM
+      Allows buyers to filter approved items by keyword
+      (title and description handled server-side)
+    -->
+    <form method="GET" action="/buyer">
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+
+          <div class="row g-2 align-items-center">
+
+            <!-- Search input -->
+            <div class="col-md-10">
+              <input
+                type="text"
+                name="q"
+                class="form-control form-control-lg"
+                placeholder="Search by item name, keyword, description..."
+                value="<%= (query && query.q) ? query.q : '' %>"
+              >
+            </div>
+
+            <!-- Submit search -->
+            <div class="col-md-2 d-grid">
+              <button class="btn btn-primary btn-lg">
+                Search
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Search feedback -->
+          <% if (query && query.q) { %>
+            <div class="small text-muted mt-2">
+              Showing results for "<strong><%= query.q %></strong>"
+              <a href="/buyer" class="ms-2">Clear</a>
+            </div>
+          <% } else { %>
+            <div class="small text-muted mt-2">
+              Tip: leave empty to browse all available items
+            </div>
+          <% } %>
+
+        </div>
+      </div>
+    </form>
+
+    <!-- EMPTY STATE -->
+    <% if (items.length === 0) { %>
+      <div class="alert alert-info">
+        No items found.
+      </div>
+    <% } %>
+
+    <!--
+      ITEMS GRID
+      Displays all approved items returned from the server
+    -->
+    <div class="row g-3">
+
+      <% items.forEach(item => { %>
+        <div class="col-12 col-md-6 col-lg-4">
+
+          <div class="card h-100 shadow-sm">
+
+            <!-- Item image (fallback handled server-side / view-side) -->
+            <div class="item-image-frame">
+              <img
+                src="<%= item.cover_image ? item.cover_image : '/images/seller_cover.png' %>"
+                class="card-img-top"
+                alt="Item image"
+              >
+            </div>
+
+            <!-- Item details -->
+            <div class="card-body">
+
+              <h5 class="card-title mb-1">
+                <%= item.title %>
+              </h5>
+
+              <% if (item.status === 'sold') { %>
+  <span class="badge bg-secondary mb-2">Sold</span>
+<% } %>
+
+
+              <!-- Truncated description for consistent card height -->
+              <p class="small text-muted mb-2">
+                <%= item.description.length > 90
+                  ? item.description.substring(0, 90) + '...'
+                  : item.description
+                %>
+              </p>
+
+              <!-- Price -->
+              <div class="fw-bold text-primary">
+                £<%= item.price %>
+              </div>
+              
+
+            </div>
+
+            <!-- View item action -->
+            <div class="card-footer bg-light">
+              <a
+                href="/items/<%= item.id %>"
+                class="btn btn-outline-primary btn-sm w-100">
+                View Item
+              </a>
+            </div>
+
+          </div>
+        </div>
+      <% }) %>
+
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

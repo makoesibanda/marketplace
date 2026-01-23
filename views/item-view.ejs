@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Page title reflects the current item -->
+  <title><%= item.title %> | Marketplace</title>
+
+  <!-- Bootstrap for layout and UI components -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Application-specific styling -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+  <!--
+    NAVIGATION BAR
+    Simple top navigation with branding and logout access
+  -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+
+      <!-- Marketplace home link -->
+      <a class="navbar-brand" href="/">
+        Marketplace
+      </a>
+
+      <!-- Session action -->
+      <div class="d-flex gap-3">
+        <a href="/logout" class="btn btn-outline-light btn-sm">
+          Logout
+        </a>
+      </div>
+
+    </div>
+  </nav>
+
+  <!--
+    MAIN CONTENT
+    Two-column layout:
+    - Left: image carousel
+    - Right: item details and actions
+  -->
+  <div class="container mt-4">
+    <div class="row g-4">
+
+      <!--
+        ITEM IMAGES
+        Displays uploaded images in a carousel
+        Falls back gracefully if only one image exists
+      -->
+      <div class="col-md-7">
+        <div class="item-view-carousel position-relative">
+
+          <% if (images.length > 0) { %>
+
+            <div id="itemCarousel" class="carousel slide">
+
+              <!-- Carousel slides -->
+              <div class="carousel-inner">
+
+                <% images.forEach((img, index) => { %>
+                  <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+                    <div class="item-view-image-frame">
+                      <img
+                        src="<%= img.image_path %>"
+                        alt="Item image"
+                      >
+                    </div>
+                  </div>
+                <% }) %>
+
+              </div>
+
+              <!-- Navigation arrows shown only when multiple images exist -->
+              <% if (images.length > 1) { %>
+
+                <button
+                  class="carousel-control-prev"
+                  type="button"
+                  data-bs-target="#itemCarousel"
+                  data-bs-slide="prev"
+                >
+                  <span class="carousel-control-prev-icon"></span>
+                </button>
+
+                <button
+                  class="carousel-control-next"
+                  type="button"
+                  data-bs-target="#itemCarousel"
+                  data-bs-slide="next"
+                >
+                  <span class="carousel-control-next-icon"></span>
+                </button>
+
+              <% } %>
+
+              <!-- Image count indicator -->
+              <div class="image-counter">
+                <%= images.length %> image<%= images.length > 1 ? 's' : '' %>
+              </div>
+
+            </div>
+
+          <% } else { %>
+
+            <!-- Fallback image when no uploads exist -->
+            <div class="item-view-image-frame">
+              <img
+                src="https://via.placeholder.com/800x500"
+                alt="No image available"
+              >
+            </div>
+
+          <% } %>
+
+        </div>
+      </div>
+
+      <!--
+        ITEM DETAILS
+        Displays metadata, description, status, and seller-only actions
+      -->
+      <div class="col-md-5">
+
+        <!-- Item title -->
+        <h2 class="fw-bold">
+          <%= item.title %>
+        </h2>
+        <% if (item.status === 'sold') { %>
+  <div class="alert alert-secondary mt-2">
+    This item has been marked as <strong>Sold</strong>.
+  </div>
+<% } %>
+
+
+        <!-- Item status indicator -->
+       <% if (item.status === 'sold') { %>
+  <span class="badge bg-secondary">Sold</span>
+
+<% } else if (item.status === 'approved') { %>
+  <span class="badge bg-success">Available</span>
+
+<% } else if (item.status === 'pending') { %>
+  <span class="badge bg-warning text-dark">Pending</span>
+
+<% } else if (item.status === 'rejected') { %>
+  <span class="badge bg-danger">Rejected</span>
+<% } %>
+
+
+        <!-- Price -->
+        <h3 class="text-primary fw-bold mt-2">
+          £<%= item.price %>
+        </h3>
+
+        <hr>
+
+        <!-- Full item description -->
+        <p class="text-muted">
+          <%= item.description %>
+        </p>
+
+        <!-- Creation timestamp -->
+        <div class="text-muted small mt-3">
+          Posted on <%= new Date(item.created_at).toLocaleDateString() %>
+        </div>
+
+        <hr>
+        <hr>
+
+<h6 class="fw-bold mb-2">Contact Seller</h6>
+
+<ul class="list-unstyled small mb-0">
+
+  <li class="mb-1">
+    <strong>Email:</strong>
+    <a href="mailto:<%= item.seller_email %>">
+      <%= item.seller_email %>
+    </a>
+  </li>
+
+  <% if (item.phone) { %>
+    <li class="mb-1">
+      <strong>Phone:</strong>
+      <%= item.phone %>
+    </li>
+  <% } %>
+
+  <% if (item.location) { %>
+    <li>
+      <strong>Location:</strong>
+      <%= item.location %>
+    </li>
+  <% } %>
+
+</ul>
+
+<p class="text-muted small mt-2 mb-0">
+  Arrange payment and collection directly with the seller.
+</p>
+
+
+        <!--
+          Seller-only controls
+          Shown only when the logged-in user owns this item
+        -->
+        <% if (currentUser && currentUser.id === item.seller_id) { %>
+
+          <div class="d-flex gap-2">
+
+            
+
+            
+
+          </div>
+
+        <% } %>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bootstrap JS for carousel and interactive components -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

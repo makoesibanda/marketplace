@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Page title dynamically set from database settings -->
+  <title><%= siteName %></title>
+
+  <!-- Bootstrap CSS for layout and responsive styling -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Custom application styles -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+  <!--
+    NAVIGATION BAR
+    Displays site branding and a discreet admin access link
+  -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+
+      <!-- Marketplace name / logo -->
+      <a class="navbar-brand" href="/">
+        <%= siteName %>
+      </a>
+
+      <!-- Admin login link (kept subtle and unobtrusive) -->
+      <a
+        href="/admin/login"
+        class="text-light small text-decoration-none opacity-75"
+      >
+        Admin
+      </a>
+
+    </div>
+  </nav>
+
+  <!--
+    HERO / LANDING SECTION
+    Primary entry point for new and returning users
+  -->
+  <section class="vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="text-center px-3">
+
+      <!-- Main headline -->
+      <h1 class="display-4 fw-bold mb-3">
+        Welcome to <%= siteName %>
+      </h1>
+
+      <!-- Short platform description -->
+      <p class="lead mb-5">
+        <%= siteDescription %>
+      </p>
+
+      <!-- Call-to-action button -->
+      <a
+        href="/explore"
+        class="btn btn-primary btn-lg explore-btn"
+      >
+        EXPLORE THE MARKETPLACE
+      </a>
+
+    </div>
+  </section>
+
+</body>
+</html>
