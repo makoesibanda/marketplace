@@ -31,6 +31,12 @@ app.use(express.urlencoded({ extended: true }));
   SESSION CONFIGURATION
   =========================
 */
+
+app.use((req, res, next) => {
+  res.locals.BASE_PATH = process.env.BASE_PATH || "/";
+  next();
+});
+
 app.use(
   session({
     secret: "marketplace_secret_key",
