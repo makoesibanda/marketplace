@@ -93,6 +93,11 @@ const upload = multer({
   storage
 });
 
+app.use((req, res, next) => {
+  res.locals.BASE_PATH = process.env.BASE_PATH || "";
+  next();
+});
+
 
 
 /*

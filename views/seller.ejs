@@ -204,7 +204,7 @@
             <!-- Item image (fallback applied server-side) -->
             <div class="item-image-frame">
               <img
-                src="<%= item.cover_image ? item.cover_image : '/images/seller_cover.png' %>"
+                src="<%= BASE_PATH + item.cover_image ? item.cover_image : '/images/seller_cover.png' %>"
                 class="card-img-top"
                 alt="Item image"
               >
