@@ -10,6 +10,13 @@ const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 
+const uploadDir = path.join(__dirname, "public/uploads/items");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+
 const multer = require("multer"); // for umage upload
 
 
