@@ -1,147 +1,81 @@
-/*
-  CREATE DATABASE
-  ---------------
-  Creates the database for the marketplace project.
-*/
+-- ===============================
+-- DATABASE
+-- ===============================
 CREATE DATABASE IF NOT EXISTS marketplace;
 USE marketplace;
 
-
-/*
-  USERS TABLE
-  -----------
-  Stores all users of the platform.
-  This table represents identity only.
-*/
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  -- User full name
+-- ===============================
+-- USERS TABLE
+-- ===============================
+CREATE TABLE IF NOT EXISTS users (
+  id INT NOT NULL AUTO_INCREMENT,
   full_name VARCHAR(100) NOT NULL,
-
-  -- Login email
-  email VARCHAR(255) NOT NULL UNIQUE,
-
-  -- Hashed password
+  email VARCHAR(255) NOT NULL,
   password VARCHAR(255) NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  is_admin TINYINT(1) DEFAULT 0,
+  reset_token VARCHAR(255) DEFAULT NULL,
+  reset_token_expires DATETIME DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-  -- Account creation timestamp
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-
-/*
-  ROLES TABLE
-  -----------
-  Defines the possible roles in the system.
-*/
-CREATE TABLE roles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  -- Role name (buyer, seller, admin)
-  name VARCHAR(50) NOT NULL UNIQUE
-);
-
-
-/*
-  USER_ROLES TABLE
-  ----------------
-  Links users to the roles they have.
-  A user can have multiple roles.
-*/
-CREATE TABLE user_roles (
-  user_id INT NOT NULL,
-  role_id INT NOT NULL,
-  assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-  PRIMARY KEY (user_id, role_id),
-
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-);
-
-
-/*
-  CATEGORIES TABLE
-  ----------------
-  Stores all available listing categories.
-*/
-CREATE TABLE categories (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  -- Category name (e.g. Electronics, Property, Services)
-  name VARCHAR(100) NOT NULL UNIQUE
-);
-
-
-/*
-  LISTINGS TABLE
-  --------------
-  Core marketplace listings.
-*/
-CREATE TABLE listings (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  -- Title shown on the marketplace
+-- ===============================
+-- ITEMS TABLE
+-- ===============================
+CREATE TABLE IF NOT EXISTS items (
+  id INT NOT NULL AUTO_INCREMENT,
+  seller_id INT NOT NULL,
   title VARCHAR(255) NOT NULL,
-
-  -- Full description of the item or service
   description TEXT NOT NULL,
-
-  -- Price of the listing
   price DECIMAL(10,2) NOT NULL,
-
-  -- Optional image path
-  image VARCHAR(255),
-
-  -- Status controls visibility
-  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-
-  -- Seller who created the listing
-  seller_id INT NOT NULL,
-
-  -- Category
-  category_id INT NOT NULL,
-
+  status ENUM('pending','approved','rejected','sold') NOT NULL DEFAULT 'pending',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-             ON UPDATE CURRENT_TIMESTAMP,
+  rejection_reason TEXT,
+  buyer_id INT DEFAULT NULL,
+  sold_at DATETIME DEFAULT NULL,
+  phone VARCHAR(30) DEFAULT NULL,
+  location VARCHAR(120) DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY seller_id (seller_id),
+  CONSTRAINT items_ibfk_1
+    FOREIGN KEY (seller_id)
+    REFERENCES users (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-  FOREIGN KEY (seller_id) REFERENCES users(id),
-  FOREIGN KEY (category_id) REFERENCES categories(id)
-);
+-- ===============================
+-- ITEM IMAGES TABLE
+-- ===============================
+CREATE TABLE IF NOT EXISTS item_images (
+  id INT NOT NULL AUTO_INCREMENT,
+  item_id INT NOT NULL,
+  image_path VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id),
+  KEY item_id (item_id),
+  CONSTRAINT item_images_ibfk_1
+    FOREIGN KEY (item_id)
+    REFERENCES items (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
-/*
-  MESSAGES TABLE
-  --------------
-  Messages sent from buyers to sellers.
-*/
-CREATE TABLE messages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  listing_id INT NOT NULL,
-  buyer_id INT NOT NULL,
-  seller_id INT NOT NULL,
-
-  message TEXT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-  FOREIGN KEY (listing_id) REFERENCES listings(id),
-  FOREIGN KEY (buyer_id) REFERENCES users(id),
-  FOREIGN KEY (seller_id) REFERENCES users(id)
-);
-
-
-/*
-  SETTINGS TABLE
-  --------------
-  Stores editable platform settings.
-  Expected to contain a single row.
-*/
-CREATE TABLE settings (
-  id INT PRIMARY KEY,
-
+-- ===============================
+-- SETTINGS TABLE
+-- ===============================
+CREATE TABLE IF NOT EXISTS settings (
+  id INT NOT NULL,
   site_name VARCHAR(100) NOT NULL,
-  site_description TEXT NOT NULL
-);
+  site_description TEXT NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ===============================
+-- APPLICATION DATABASE USER
+-- ===============================
+CREATE USER IF NOT EXISTS 'marketplace_app'@'localhost'
+IDENTIFIED BY 'CHANGE_ME_PASSWORD';
+
+GRANT ALL PRIVILEGES ON marketplace.*
+TO 'marketplace_app'@'localhost';
+
+FLUSH PRIVILEGES;

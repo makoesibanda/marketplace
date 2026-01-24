@@ -1,22 +1,21 @@
-/*
-  INITIAL PLATFORM DATA
-  ---------------------
-  Seeds essential data required for the application to run.
-  This includes platform settings and default roles.
-*/
-
 USE marketplace;
 
--- Default platform settings (single row)
+-- Admin user
+INSERT INTO users (full_name, email, password, is_admin)
+VALUES (
+  'Admin User',
+  'admin@marketplace.com',
+  '$2b$10$REPLACE_WITH_BCRYPT_HASH',
+  1
+);
+
+-- Default site settings
 INSERT INTO settings (id, site_name, site_description)
 VALUES (
   1,
   'Marketplace',
-  'A platform for buying and selling goods and services'
-);
-
--- Default roles used by the system
-INSERT INTO roles (name) VALUES
-('buyer'),
-('seller'),
-('admin');
+  'Buy and sell items locally'
+)
+ON DUPLICATE KEY UPDATE
+site_name = VALUES(site_name),
+site_description = VALUES(site_description);
