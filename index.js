@@ -307,12 +307,18 @@ app.get("/seller", requireUser, async (req, res) => {
     i.status,
     i.rejection_reason,
     i.created_at,
-    (
-      SELECT image_path 
-      FROM item_images 
-      WHERE item_id = i.id 
-      LIMIT 1
-    ) AS cover_image
+    COALESCE(
+  (
+    SELECT image_path
+    FROM item_images
+    WHERE item_id = i.id
+      AND image_path IS NOT NULL
+      AND image_path != ''
+    LIMIT 1
+  ),
+  '/images/seller_cover.png'
+) AS cover_image
+
   FROM items i
   WHERE i.seller_id = ?
 
