@@ -93,10 +93,11 @@
             <!-- IMAGE -->
             <div class="item-image-frame">
               <img
-                src="<%= BASE_PATH + item.cover_image ? item.cover_image : '/images/seller_cover.png' %>"
-                class="card-img-top"
-                alt="Item image"
-              >
+  src="<%= BASE_PATH + (item.cover_image || '/images/seller_cover.png') %>"
+  class="card-img-top"
+  alt="Item image"
+>
+
             </div>
 
             <div class="card-body">
