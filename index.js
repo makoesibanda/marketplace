@@ -197,11 +197,13 @@ app.get("/buyer", requireUser, async (req, res) => {
     const q = req.query.q || "";
 
     let sql = `
-      SELECT
-        i.id,
-        i.title,
-        i.price,
-        i.description,
+       SELECT
+  i.id,
+  i.title,
+  i.price,
+  i.description,
+  i.status,
+
         COALESCE(
           (
             SELECT image_path
@@ -374,11 +376,13 @@ const [items] = await db.execute(sql, params);
 });
 
 
+
+
 // Create new item
 app.post(
   "/seller/items/create",
   requireUser,
-  upload.array("images", 3),
+  upload.array("images"),
   async (req, res) => {
     try {
       const {

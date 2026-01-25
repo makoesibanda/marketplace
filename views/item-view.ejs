@@ -1,159 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
+<title><%= item.title %> | Marketplace</title>
 
-  <title><%= item.title %> | Marketplace</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="<%= BASE_PATH %>/style.css">
 
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
+<style>
+.product-wrapper {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr;
+  gap: 30px;
+}
 
-  <link rel="stylesheet" href="/style.css">
+.thumb img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.thumb img:hover {
+  border-color: #0d6efd;
+}
+
+.main-img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+</style>
 </head>
 
 <body>
 
-  <!-- NAVBAR -->
-  <nav class="navbar navbar-dark bg-dark">
-    <div class="container d-flex justify-content-between align-items-center">
-      <a class="navbar-brand fw-bold" href="/">Marketplace</a>
-      <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
-    </div>
-  </nav>
+<nav class="navbar navbar-dark bg-dark">
+<div class="container">
+<a class="navbar-brand" href="/">Marketplace</a>
+<a href="/buyer" class="btn btn-outline-light btn-sm">Back</a>
+</div>
+</nav>
 
-  <!-- MAIN -->
-  <div class="container mt-5">
+<div class="container mt-4">
 
-    <div class="row g-4 align-items-start">
+<div class="product-wrapper">
 
-      <!-- LEFT: IMAGES -->
-      <div class="col-lg-7">
-
-        <div class="card shadow-sm">
-
-          <% if (images.length > 0) { %>
-            <div id="itemCarousel" class="carousel slide">
-
-              <div class="carousel-inner">
-
-                <% images.forEach((img, index) => { %>
-                  <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
-                    <div class="item-view-image-frame">
-                      <img
-                        src="<%= BASE_PATH + img.image_path %>"
-                        class="d-block w-100"
-                        alt="Item image"
-                      >
-                    </div>
-                  </div>
-                <% }) %>
-
-              </div>
-
-              <% if (images.length > 1) { %>
-                <button class="carousel-control-prev" type="button" data-bs-target="#itemCarousel" data-bs-slide="prev">
-                  <span class="carousel-control-prev-icon"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#itemCarousel" data-bs-slide="next">
-                  <span class="carousel-control-next-icon"></span>
-                </button>
-              <% } %>
-
-              <div class="position-absolute bottom-0 end-0 bg-dark text-white small px-2 py-1 m-2 rounded">
-                <%= images.length %> image<%= images.length > 1 ? 's' : '' %>
-              </div>
-
-            </div>
-          <% } else { %>
-            <div class="item-view-image-frame">
-              <img src="/images/seller_cover.png" class="w-100">
-            </div>
-          <% } %>
-
-        </div>
-      </div>
-
-      <!-- RIGHT: DETAILS -->
-      <div class="col-lg-5">
-
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-
-            <h2 class="fw-bold mb-1"><%= item.title %></h2>
-
-            <!-- STATUS -->
-            <% if (item.status === 'sold') { %>
-              <span class="badge bg-secondary">Sold</span>
-            <% } else if (item.status === 'approved') { %>
-              <span class="badge bg-success">Available</span>
-            <% } else if (item.status === 'pending') { %>
-              <span class="badge bg-warning text-dark">Pending</span>
-            <% } else { %>
-              <span class="badge bg-danger">Rejected</span>
-            <% } %>
-
-            <% if (item.status === 'sold') { %>
-              <div class="alert alert-secondary mt-3 mb-2">
-                This item has been marked as <strong>Sold</strong>.
-              </div>
-            <% } %>
-
-            <!-- PRICE -->
-            <div class="fs-2 fw-bold text-primary mt-3">
-              £<%= item.price %>
-            </div>
-
-            <hr>
-
-            <!-- DESCRIPTION -->
-            <p class="text-muted">
-              <%= item.description %>
-            </p>
-
-            <div class="small text-muted">
-              Posted on <%= new Date(item.created_at).toLocaleDateString() %>
-            </div>
-
-            <hr>
-
-            <!-- CONTACT -->
-            <h6 class="fw-bold">Contact Seller</h6>
-
-            <ul class="list-unstyled small mb-2">
-              <li>
-                <strong>Email:</strong>
-                <a href="mailto:<%= item.seller_email %>">
-                  <%= item.seller_email %>
-                </a>
-              </li>
-
-              <% if (item.phone) { %>
-                <li><strong>Phone:</strong> <%= item.phone %></li>
-              <% } %>
-
-              <% if (item.location) { %>
-                <li><strong>Location:</strong> <%= item.location %></li>
-              <% } %>
-            </ul>
-
-            <p class="text-muted small mb-3">
-              Arrange payment and collection directly with the seller.
-            </p>
-
-            <a href="/buyer" class="btn btn-outline-secondary btn-sm">
-              ← Back to listings
-            </a>
-
-          </div>
-        </div>
-
-      </div>
-
-    </div>
+<!-- THUMBNAILS -->
+<div>
+<% images.forEach(img => { %>
+  <div class="thumb mb-2">
+    <img src="<%= BASE_PATH + img.image_path %>" onclick="document.getElementById('mainImage').src=this.src">
   </div>
+<% }) %>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- MAIN IMAGE -->
+<div>
+<img id="mainImage" src="<%= BASE_PATH + images[0].image_path %>" class="main-img shadow-sm">
+</div>
+
+<!-- PRODUCT INFO -->
+<div>
+
+<h3 class="fw-bold"><%= item.title %></h3>
+
+<% if(item.status === 'sold'){ %>
+<span class="badge bg-secondary">Sold</span>
+<% } else { %>
+<span class="badge bg-success">Available</span>
+<% } %>
+
+<h2 class="text-primary fw-bold mt-2">£<%= item.price %></h2>
+
+<p class="text-muted mt-3"><%= item.description %></p>
+
+<hr>
+
+<h6 class="fw-bold">Seller Contact</h6>
+
+<p class="mb-1">
+Email:
+<a href="mailto:<%= item.seller_email %>">
+<%= item.seller_email %>
+</a>
+</p>
+
+<% if(item.phone){ %>
+<p class="mb-1">Phone: <%= item.phone %></p>
+<% } %>
+
+<% if(item.location){ %>
+<p>Location: <%= item.location %></p>
+<% } %>
+
+<hr>
+
+<p class="small text-muted">
+Posted <%= new Date(item.created_at).toLocaleDateString() %>
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

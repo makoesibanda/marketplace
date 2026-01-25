@@ -150,10 +150,17 @@
               <h5 class="card-title mb-1">
                 <%= item.title %>
               </h5>
+<% if (item.status === 'approved') { %>
+  <span class="badge bg-success position-absolute top-0 end-0 m-2">
+    Available
+  </span>
 
-              <% if (item.status === 'sold') { %>
-  <span class="badge bg-secondary mb-2">Sold</span>
+<% } else if (item.status === 'sold') { %>
+  <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
+    Sold
+  </span>
 <% } %>
+
 
 
               <!-- Truncated description for consistent card height -->
