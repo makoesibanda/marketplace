@@ -806,79 +806,6 @@ app.post("/admin/login", async (req, res) => {
       });
     }
 
-    app.get("/admin/settings", requireAdmin, async (req, res) => {
-  try {
-    // Fetch current marketplace settings (single row system)
-    const [[settings]] = await db.execute(
-      `
-      SELECT site_name, site_description
-      FROM settings
-      WHERE id = 1
-      LIMIT 1
-      `
-    );
-
-    // Render settings page with current values
-    res.render("admin-settings", {
-      settings
-    });
-
-  } catch (err) {
-    // If anything goes wrong, log it and return admin safely
-    console.error("Failed to load admin settings:", err);
-    res.redirect(url("/admin"));
-  }
-});
-
-
-/*
-  =====================================
-  ADMIN SETTINGS – UPDATE SETTINGS
-  =====================================
-  This route handles saving updates made by the admin
-  to the marketplace configuration.
-
-  Once saved:
-  - Homepage title updates
-  - Marketplace description updates
-  - Branding changes are reflected immediately
-*/
-app.post("/admin/settings", requireAdmin, async (req, res) => {
-  try {
-    const { site_name, site_description } = req.body;
-
-    // Update marketplace configuration
-    await db.execute(
-      `
-      UPDATE settings
-      SET site_name = ?, site_description = ?
-      WHERE id = 1
-      `,
-      [site_name, site_description]
-    );
-
-    // Re-fetch updated values to confirm save
-    const [[settings]] = await db.execute(
-      `
-      SELECT site_name, site_description
-      FROM settings
-      WHERE id = 1
-      LIMIT 1
-      `
-    );
-
-    // Render page again with success feedback
-    res.render("admin-settings", {
-      settings,
-      success: "Marketplace settings updated successfully."
-    });
-
-  } catch (err) {
-    // Log error and keep admin in control
-    console.error("Failed to update admin settings:", err);
-    res.redirect(url("/admin/settings"));
-  }
-});
 
 
     /*
@@ -962,6 +889,85 @@ app.post("/admin/items/:id/reject", requireAdmin, async (req, res) => {
     });
   }
 });
+
+
+
+
+app.get("/admin/settings", requireAdmin, async (req, res) => {
+  try {
+    // Fetch current marketplace settings (single row system)
+    const [[settings]] = await db.execute(
+      `
+      SELECT site_name, site_description
+      FROM settings
+      WHERE id = 1
+      LIMIT 1
+      `
+    );
+
+    // Render settings page with current values
+    res.render("admin-settings", {
+      settings
+    });
+
+  } catch (err) {
+    // If anything goes wrong, log it and return admin safely
+    console.error("Failed to load admin settings:", err);
+    res.redirect(url("/admin"));
+  }
+});
+
+
+/*
+  =====================================
+  ADMIN SETTINGS – UPDATE SETTINGS
+  =====================================
+  This route handles saving updates made by the admin
+  to the marketplace configuration.
+
+  Once saved:
+  - Homepage title updates
+  - Marketplace description updates
+  - Branding changes are reflected immediately
+*/
+app.post("/admin/settings", requireAdmin, async (req, res) => {
+  try {
+    const { site_name, site_description } = req.body;
+
+    // Update marketplace configuration
+    await db.execute(
+      `
+      UPDATE settings
+      SET site_name = ?, site_description = ?
+      WHERE id = 1
+      `,
+      [site_name, site_description]
+    );
+
+    // Re-fetch updated values to confirm save
+    const [[settings]] = await db.execute(
+      `
+      SELECT site_name, site_description
+      FROM settings
+      WHERE id = 1
+      LIMIT 1
+      `
+    );
+
+    // Render page again with success feedback
+    res.render("admin-settings", {
+      settings,
+      success: "Marketplace settings updated successfully."
+    });
+
+  } catch (err) {
+    // Log error and keep admin in control
+    console.error("Failed to update admin settings:", err);
+    res.redirect(url("/admin/settings"));
+  }
+});
+
+
 
 app.get("/admin", requireAdmin, async (req, res) => {
   try {
