@@ -806,19 +806,7 @@ app.post("/admin/login", async (req, res) => {
       });
     }
 
-    /*
-  =====================================
-  ADMIN SETTINGS – VIEW SETTINGS PAGE
-  =====================================
-  This route allows an admin to view and edit
-  marketplace-wide settings such as:
-  - Marketplace name
-  - Marketplace description
-
-  These values are stored in the `settings` table
-  and are used across the public-facing site.
-*/
-app.get("/admin/settings", requireAdmin, async (req, res) => {
+    app.get("/admin/settings", requireAdmin, async (req, res) => {
   try {
     // Fetch current marketplace settings (single row system)
     const [[settings]] = await db.execute(
@@ -892,6 +880,19 @@ app.post("/admin/settings", requireAdmin, async (req, res) => {
   }
 });
 
+
+    /*
+  =====================================
+  ADMIN SETTINGS – VIEW SETTINGS PAGE
+  =====================================
+  This route allows an admin to view and edit
+  marketplace-wide settings such as:
+  - Marketplace name
+  - Marketplace description
+
+  These values are stored in the `settings` table
+  and are used across the public-facing site.
+*/
 
     // =========================
 // ADMIN – APPROVE ITEM
