@@ -134,13 +134,12 @@
           <div class="card h-100 shadow-sm">
 
             <!-- Item image (fallback handled server-side / view-side) -->
-            <div class="item-image-frame">
-              <img
-                src="<%=BASE_PATH + item.cover_image ? item.cover_image : '/images/seller_cover.png' %>"
-                class="card-img-top"
-                alt="Item image"
-              >
-            </div>
+           <img
+  src="<%= BASE_PATH + item.cover_image %>"
+  class="card-img-top"
+  alt="Item image"
+>
+
 
             <!-- Item details -->
             <div class="card-body">
