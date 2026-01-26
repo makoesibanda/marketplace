@@ -3,6 +3,10 @@ require("dotenv").config();
 
 const fs = require("fs"); // for file deletion from the local storage 
 
+const crypto = require("crypto");     // Generates random verification tokens
+const nodemailer = require("nodemailer"); // Sends emails
+
+
 
 const express = require("express");
 const path = require("path");
@@ -22,6 +26,8 @@ const multer = require("multer"); // for umage upload
 
 const app = express();
 
+
+
 /*
   =========================
   EXPRESS CONFIGURATION
@@ -39,6 +45,22 @@ function url(p) {
 app.use(basePath, express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 
+/*
+=========================
+EMAIL CONFIGURATION
+=========================
+Used to send verification emails
+*/
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 /*
   =========================
@@ -781,6 +803,38 @@ app.get("/admin/items", requireAdmin, async (req, res) => {
   }
 });
 
+/*
+=========================
+EMAIL VERIFICATION
+=========================
+*/
+
+app.get("/verify/:token", async (req, res) => {
+
+  const token = req.params.token;
+
+  const [rows] = await db.execute(
+    "SELECT id FROM users WHERE verification_token = ? LIMIT 1",
+    [token]
+  );
+
+  if (!rows.length) {
+    return res.send("Invalid or expired verification link.");
+  }
+
+  await db.execute(
+    `
+    UPDATE users
+    SET email_verified = 1,
+        verification_token = NULL
+    WHERE id = ?
+    `,
+    [rows[0].id]
+  );
+
+  res.send("Email verified. You can now login.");
+});
+
 
 app.get("/admin/login", (req, res) => {
   res.render("admin-login");
@@ -1014,16 +1068,11 @@ app.post("/register", async (req, res) => {
   const { full_name, email, password, confirm_password } = req.body;
 
   try {
+
+    // Validation
     if (!full_name || !email || !password || !confirm_password) {
       return res.render("register", {
-        error:'sAll fields are required.',
-        formData: { full_name, email }
-      });
-    }
-
-    if (password.length < 4) {
-      return res.render("register", {
-        error: "Password must be at least 4 characters long.",
+        error: "All fields are required.",
         formData: { full_name, email }
       });
     }
@@ -1035,32 +1084,50 @@ app.post("/register", async (req, res) => {
       });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate email verification token
+    const token = crypto.randomBytes(32).toString("hex");
+
+    // Save user UNVERIFIED
     await db.execute(
-      "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)",
-      [full_name, email, hashedPassword]
+      `
+      INSERT INTO users (full_name, email, password, verification_token)
+      VALUES (?, ?, ?, ?)
+      `,
+      [full_name, email, hashedPassword, token]
     );
 
+    // Create verification link
+    const verifyLink = `${process.env.BASE_URL}/verify/${token}`;
+
+    // Send email
+    await transporter.sendMail({
+      from: '"Marketplace" <no-reply@marketplace>',
+      to: email,
+      subject: "Verify your Marketplace account",
+      html: `
+        <h3>Welcome!</h3>
+        <p>Please verify your email:</p>
+        <a href="${verifyLink}">Verify Account</a>
+      `
+    });
+
     res.render("register", {
-      success: "Registration successful. You can now log in.",
+      success: "Check your email to verify your account.",
       formData: {}
     });
-  } catch (err) {
-    if (err.code === "ER_DUP_ENTRY") {
-      return res.render("register", {
-        error: "This email is already registered.",
-        formData: { full_name, email }
-      });
-    }
 
+  } catch (err) {
     console.error(err);
     res.render("register", {
-      error: "Something went wrong. Please try again.",
+      error: "Registration failed.",
       formData: { full_name, email }
     });
   }
 });
+
 
 /*
   =========================
@@ -1083,6 +1150,13 @@ app.post("/login", async (req, res) => {
     }
 
     const user = rows[0];
+
+    if (!user.email_verified) {
+  return res.render("login", {
+    error: "Please verify your email first."
+  });
+}
+
     const match = await bcrypt.compare(password, user.password);
 
     if (!match) {
