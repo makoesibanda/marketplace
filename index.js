@@ -9,6 +9,7 @@ const nodemailer = require("nodemailer"); // Sends emails
 
 
 const express = require("express");
+const express = require("express");
 const path = require("path");
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
@@ -1166,6 +1167,7 @@ await db.execute(
       formData: {}
     });
 
+  } catch (err) {
     console.error(err);
     res.render("register", {
       error: "Registration failed.",
