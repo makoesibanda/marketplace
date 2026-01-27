@@ -9,6 +9,7 @@ const nodemailer = require("nodemailer"); // Sends emails
 
 
 const express = require("express");
+const express = require("express");
 const path = require("path");
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
@@ -1090,14 +1091,61 @@ app.post("/register", async (req, res) => {
     // Generate email verification token
     const token = crypto.randomBytes(32).toString("hex");
 
-    // Save user UNVERIFIED
-    await db.execute(
-      `
-      INSERT INTO users (full_name, email, password, verification_token)
-      VALUES (?, ?, ?, ?)
-      `,
-      [full_name, email, hashedPassword, token]
-    );
+   // Check if email already exists
+const [existing] = await db.execute(
+  "SELECT id, email_verified FROM users WHERE email = ? LIMIT 1",
+  [email]
+);
+
+if (existing.length > 0) {
+
+  // If already verified -> block registration
+  if (existing[0].email_verified) {
+    return res.render("register", {
+      error: "Email already registered. Please login.",
+      formData: { full_name, email }
+    });
+  }
+
+  // If NOT verified -> resend verification
+  const newToken = crypto.randomBytes(32).toString("hex");
+
+  await db.execute(
+    `
+    UPDATE users
+    SET verification_token = ?
+    WHERE email = ?
+    `,
+    [newToken, email]
+  );
+
+  const verifyLink = `${process.env.BASE_URL}/verify/${newToken}`;
+
+  await transporter.sendMail({
+    from: '"Marketplace" <no-reply@marketplace>',
+    to: email,
+    subject: "Verify your Marketplace account",
+    html: `
+      <h3>Welcome back!</h3>
+      <p>Please verify your email:</p>
+      <a href="${verifyLink}">Verify Account</a>
+    `
+  });
+
+  return res.render("register", {
+    success: "Verification email resent. Check your inbox.",
+    formData: {}
+  });
+}
+
+// New user
+await db.execute(
+  `
+  INSERT INTO users (full_name, email, password, verification_token)
+  VALUES (?, ?, ?, ?)
+  `,
+  [full_name, email, hashedPassword, token]
+);
 
     // Create verification link
     const verifyLink = `${process.env.BASE_URL}/verify/${token}`;
