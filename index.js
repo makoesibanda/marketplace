@@ -397,6 +397,94 @@ const [items] = await db.execute(sql, params);
   }
 });
 
+//FORGOT PASSWORD ROUTES 
+
+app.get("/forgot-password", (req,res)=>{
+  res.render("forgot-password");
+});
+
+
+app.post("/forgot-password", async (req,res)=>{
+  const { email } = req.body;
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 3600000); // 1 hour
+
+  const [users] = await db.execute(
+    "SELECT id FROM users WHERE email = ? LIMIT 1",
+    [email]
+  );
+
+  if (!users.length) {
+    return res.render("forgot-password", {
+      error: "Email not found"
+    });
+  }
+
+  await db.execute(
+    `UPDATE users SET reset_token=?, reset_expires=? WHERE email=?`,
+    [token, expires, email]
+  );
+
+  const link = `${process.env.BASE_URL}/reset-password/${token}`;
+
+  await transporter.sendMail({
+    to: email,
+    subject: "Reset your password",
+    html: `<a href="${link}">Reset Password</a>`
+  });
+
+  res.render("forgot-password", {
+    success: "Check your email"
+  });
+});
+
+////
+
+///reset routes 
+
+app.get("/reset-password/:token", async (req,res)=>{
+  const token = req.params.token;
+
+  const [rows] = await db.execute(
+    "SELECT id FROM users WHERE reset_token=? AND reset_expires > NOW()",
+    [token]
+  );
+
+  if (!rows.length) return res.send("Invalid or expired link");
+
+  res.render("reset-password");
+});
+
+
+app.post("/reset-password/:token", async (req,res)=>{
+  const { password, confirm } = req.body;
+  const token = req.params.token;
+
+  if (password !== confirm) {
+    return res.render("reset-password", { error:"Passwords mismatch" });
+  }
+
+  const hash = await bcrypt.hash(password,10);
+
+  const [rows] = await db.execute(
+    "SELECT id FROM users WHERE reset_token=? AND reset_expires > NOW()",
+    [token]
+  );
+
+  if (!rows.length) return res.send("Expired");
+
+  await db.execute(
+    `
+    UPDATE users
+    SET password=?, reset_token=NULL, reset_expires=NULL
+    WHERE id=?
+    `,
+    [hash, rows[0].id]
+  );
+
+  res.send("Password updated. You may login.");
+});
 
 
 
