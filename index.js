@@ -400,7 +400,10 @@ const [items] = await db.execute(sql, params);
 //FORGOT PASSWORD ROUTES 
 
 app.get("/forgot-password", (req,res)=>{
-  res.render("forgot-password");
+  res.render("forgot-password", {
+    error: null,
+    success: null
+  });
 });
 
 
