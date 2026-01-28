@@ -649,19 +649,23 @@ app.get("/items/:id", requireAuth, async (req, res) => {
   try {
     const itemId = req.params.id;
 
-    // Fetch item details together with seller contact info
+    // Fetch item details 
 const [[item]] = await db.execute(
-  `
-  SELECT
-    i.*,
-    u.email AS seller_email
-  FROM items i
-  JOIN users u ON i.seller_id = u.id
-  WHERE i.id = ?
-  LIMIT 1
-  `,
-  [itemId]
+`
+SELECT
+  i.*,
+  u.email AS seller_email,
+  c.name AS category_name
+FROM items i
+JOIN users u ON i.seller_id = u.id
+LEFT JOIN categories c ON i.category_id = c.id
+WHERE i.id = ?
+LIMIT 1
+`,
+[itemId]
 );
+
+
 
 
     if (!item) {

@@ -71,6 +71,10 @@
 
 <h3 class="fw-bold"><%= item.title %></h3>
 
+<p class="text-muted mb-1">
+Category: <strong><%= item.category_name || "Uncategorised" %></strong>
+</p>
+
 <% if(item.status === 'sold'){ %>
 <span class="badge bg-secondary">Sold</span>
 <% } else { %>
