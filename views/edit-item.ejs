@@ -92,6 +92,30 @@ EDIT FORM
   required>
 </div>
 
+<div class="col-md-6">
+<label class="form-label">Category</label>
+
+<select name="category_id" class="form-select" required>
+
+<option value="">Select category</option>
+
+<% categories.forEach(cat => { %>
+
+<option
+value="<%= cat.id %>"
+<%= item.category_id === cat.id ? "selected" : "" %>>
+
+<%= cat.name %>
+
+</option>
+
+<% }) %>
+
+</select>
+
+</div>
+
+
 <div class="col-12">
 <label class="form-label">Description</label>
 <textarea

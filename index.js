@@ -705,32 +705,31 @@ if (images.length === 0) {
   =========================
   SELLER – EDIT ITEM (GET)
   =========================
-*/
-app.get("/seller/items/:id/edit", requireUser, async (req, res) => {
+*/app.get("/seller/items/:id/edit", requireUser, async (req, res) => {
   try {
     const itemId = req.params.id;
     const sellerId = req.session.user.id;
 
-    // 1. Fetch item and ensure it belongs to this seller
     const [items] = await db.execute(
       `
       SELECT *
       FROM items
-WHERE id = ?
+      WHERE id = ? AND seller_id = ?
       LIMIT 1
       `,
       [itemId, sellerId]
     );
 
-    // If item not found or not owned by seller
+    const [categories] = await db.execute(
+      "SELECT id, name FROM categories ORDER BY name"
+    );
+
     if (items.length === 0) {
       return res.redirect(url("/seller"));
     }
 
     const item = items[0];
 
-
-    // 3. Fetch item images
     const [images] = await db.execute(
       `
       SELECT id, image_path
@@ -740,17 +739,19 @@ WHERE id = ?
       [itemId]
     );
 
-    // 4. Render edit page
     res.render("edit-item", {
       item,
-      images
+      images,
+      categories,
+      isAdminEdit: false
     });
 
   } catch (err) {
     console.error("Edit item GET error:", err);
-    res.redirecturl(url("/seller"));
+    res.redirect(url("/seller"));
   }
 });
+
 
 app.post(
   "/seller/items/:id/edit",
@@ -759,7 +760,7 @@ app.post(
   async (req, res) => {
     const itemId = req.params.id;
     const sellerId = req.session.user.id;
-    const { title, price, description, remove_images } = req.body;
+const { title, price, description, category_id, remove_images } = req.body;
 
     try {
       // 1. Ensure item belongs to seller AND is pending
@@ -778,13 +779,14 @@ WHERE id = ?
 
       // 2. Update item details
       await db.execute(
-        `
-        UPDATE items
-        SET title = ?, price = ?, description = ?
-        WHERE id = ?
-        `,
-        [title, price, description, itemId]
-      );
+`
+UPDATE items
+SET title=?, price=?, description=?, category_id=?
+WHERE id=?
+`,
+[title, price, description, category_id, itemId]
+);
+
 
       if (req.session.user.is_admin === 1) {
   await db.execute(
@@ -1081,6 +1083,11 @@ app.get("/admin/items/:id/edit", requireAdmin, async (req, res) => {
       [itemId]
     );
 
+    const [categories] = await db.execute(
+  "SELECT id, name FROM categories ORDER BY name"
+);
+
+
     if (!item) return res.redirect(url("/admin/items"));
 
     const [images] = await db.execute(
@@ -1108,7 +1115,7 @@ app.post(
   upload.array("images"),
   async (req, res) => {
     const itemId = req.params.id;
-    const { title, price, description, remove_images } = req.body;
+const { title, price, description, category_id, remove_images } = req.body;
 
     try {
       // Make sure item exists
@@ -1120,14 +1127,15 @@ app.post(
       if (!item) return res.redirect(url("/admin/items"));
 
       // Update item
-      await db.execute(
-        `
-        UPDATE items
-        SET title = ?, price = ?, description = ?
-        WHERE id = ?
-        `,
-        [title, price, description, itemId]
-      );
+     await db.execute(
+`
+UPDATE items
+SET title=?, price=?, description=?, category_id=?
+WHERE id=?
+`,
+[title, price, description, category_id, itemId]
+);
+
 
       // Remove selected images
       if (remove_images) {
