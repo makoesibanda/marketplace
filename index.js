@@ -241,7 +241,7 @@ app.get("/register", (req, res) => {
   USER DASHBOARDS
   =========================
 */
-app.get("/buyer", requireUser, async (req, res) => {
+app.get("/buyer", async (req, res) => {
   try {
     const q = req.query.q || "";
     const category = req.query.category || "";
@@ -650,7 +650,7 @@ category_id
   }
 );
 
-app.get("/items/:id", requireAuth, async (req, res) => {
+app.get("/items/:id", async (req, res) => {
   try {
     const itemId = req.params.id;
 
@@ -691,17 +691,15 @@ if (images.length === 0) {
 }
 let backUrl = "/buyer";
 
-if (req.session.user.is_admin === 1) {
-  backUrl = "/admin/items";
-} else if (item.seller_id === req.session.user.id) {
-  backUrl = "/seller";
+if (req.session.user) {
+  if (req.session.user.is_admin === 1) {
+    backUrl = "/admin/items";
+  } else if (item.seller_id === req.session.user.id) {
+    backUrl = "/seller";
+  }
 }
 
-
-// admin
-if (req.session.user.is_admin === 1) {
-  backUrl = "/admin/items";
-}
+ 
 
 // seller viewing own item
 if (item.seller_id === req.session.user.id) {
