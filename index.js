@@ -790,11 +790,13 @@ LIMIT 1
 `,
 [itemId, sellerId]
 );
+if (items.length === 0) {
+  req.session.flash = {
+    error: "Only pending items can be edited."
+  };
+  return res.redirect(url("/seller"));
+}
 
-
-      if (items.length === 0) {
-        return res.redirect(url("/seller"));
-      }
 
       // 2. Update item details
       await db.execute(
@@ -1107,7 +1109,12 @@ WHERE i.id = ? AND i.status = 'pending'
 );
 
 
-    if (!item) return res.redirect(url("/admin/items"));
+if (!item) {
+  req.session.flash = {
+    error: "Only pending items can be edited."
+  };
+  return res.redirect(url("/admin/items"));
+}
 
     const [images] = await db.execute(
       "SELECT id, image_path FROM item_images WHERE item_id = ?",
@@ -1146,7 +1153,12 @@ const { title, price, description, category_id, remove_images } = req.body;
         [itemId]
       );
 
-      if (!item) return res.redirect(url("/admin/items"));
+if (!item) {
+  req.session.flash = {
+    error: "Only pending items can be edited."
+  };
+  return res.redirect(url("/admin/items"));
+}
 
       // Update item
      await db.execute(

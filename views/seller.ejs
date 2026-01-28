@@ -54,6 +54,18 @@
     MAIN DASHBOARD CONTENT
   -->
   <div class="container mt-4">
+    <% if (flash && flash.error) { %>
+<div class="alert alert-danger">
+  <%= flash.error %>
+</div>
+<% } %>
+
+<% if (flash && flash.success) { %>
+<div class="alert alert-success">
+  <%= flash.success %>
+</div>
+<% } %>
+
 
     <!--
       DASHBOARD HEADER
