@@ -689,11 +689,17 @@ if (images.length === 0) {
     { image_path: "/images/seller_cover.png" }
   ];
 }
+const backUrl =
+  req.session.user.is_admin === 1
+    ? "/admin/items"
+    : "/buyer";
 
-    res.render("item-view", {
-      item,
-      images
-    });
+res.render("item-view", {
+  item,
+  images,
+  backUrl
+});
+
 
   } catch (err) {
     console.error(err);
@@ -739,12 +745,14 @@ if (images.length === 0) {
       [itemId]
     );
 
-    res.render("edit-item", {
-      item,
-      images,
-      categories,
-      isAdminEdit: false
-    });
+   res.render("edit-item", {
+  item,
+  images,
+  categories,
+  backUrl: "/seller",
+  isAdminEdit: false
+});
+
 
   } catch (err) {
     console.error("Edit item GET error:", err);
@@ -1098,11 +1106,14 @@ app.get("/admin/items/:id/edit", requireAdmin, async (req, res) => {
     );
 
     // Reuse the same edit page, but tell it admin mode
-    res.render("edit-item", {
-      item,
-      images,
-      isAdminEdit: true
-    });
+   res.render("edit-item", {
+  item,
+  images,
+  categories,
+  backUrl: "/admin/items",
+  isAdminEdit: true
+});
+
 
   } catch (err) {
     console.error("Admin edit item GET error:", err);
