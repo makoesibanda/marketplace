@@ -765,13 +765,15 @@ const { title, price, description, category_id, remove_images } = req.body;
     try {
       // 1. Ensure item belongs to seller AND is pending
       const [items] = await db.execute(
-        `
-        SELECT * FROM items
-WHERE id = ?
-        LIMIT 1
-        `,
-        [itemId, sellerId]
-      );
+`
+SELECT *
+FROM items
+WHERE id = ? AND seller_id = ?
+LIMIT 1
+`,
+[itemId, sellerId]
+);
+
 
       if (items.length === 0) {
         return res.redirect(url("/seller"));
