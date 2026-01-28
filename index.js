@@ -80,6 +80,14 @@ app.use(
   })
 );
 
+
+app.use((req, res, next) => {
+  res.locals.flash = req.session.flash || null;
+  delete req.session.flash;
+  next();
+}); /// carte flash msges
+
+
 // Make logged-in user available in all views
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
@@ -1004,7 +1012,10 @@ app.get("/admin/categories", requireAdmin, async (req, res) => {
 app.post("/admin/categories/create", requireAdmin, async (req, res) => {
   const { name } = req.body;
 
-  if (!name) return res.redirect(url("/admin/categories"));
+  if (!name) {
+    req.session.flash = { error: "Category name required." };
+    return res.redirect(url("/admin/categories"));
+  }
 
   try {
     await db.execute(
@@ -1012,13 +1023,16 @@ app.post("/admin/categories/create", requireAdmin, async (req, res) => {
       [name]
     );
 
+    req.session.flash = { success: "Category created successfully." };
     res.redirect(url("/admin/categories"));
 
   } catch (err) {
     console.error(err);
+    req.session.flash = { error: "Category already exists." };
     res.redirect(url("/admin/categories"));
   }
 });
+
 
 app.post("/admin/categories/:id/delete", requireAdmin, async (req, res) => {
   const id = req.params.id;
@@ -1030,19 +1044,23 @@ app.post("/admin/categories/:id/delete", requireAdmin, async (req, res) => {
     );
 
     if (count.total > 0) {
-      return res.send("Cannot delete category with items.");
+      req.session.flash = {
+        error: "Cannot delete category with active items."
+      };
+      return res.redirect(url("/admin/categories"));
     }
 
     await db.execute("DELETE FROM categories WHERE id = ?", [id]);
 
+    req.session.flash = { success: "Category deleted successfully." };
     res.redirect(url("/admin/categories"));
 
   } catch (err) {
     console.error(err);
+    req.session.flash = { error: "Delete failed." };
     res.redirect(url("/admin/categories"));
   }
 });
-
 
 
 

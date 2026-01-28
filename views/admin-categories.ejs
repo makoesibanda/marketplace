@@ -11,10 +11,24 @@
 <nav class="navbar navbar-dark bg-dark">
 <div class="container">
 <a class="navbar-brand" href="/admin">Admin</a>
+
+<a href="/admin" class="btn btn-outline-light btn-sm">
+Back to Dashboard
+</a>
 </div>
 </nav>
 
 <div class="container mt-4">
+
+    <% if(flash?.success){ %>
+<div class="alert alert-success"><%= flash.success %></div>
+<% } %>
+
+<% if(flash?.error){ %>
+<div class="alert alert-danger"><%= flash.error %></div>
+<% } %>
+
+
 
 <h3>Categories</h3>
 
