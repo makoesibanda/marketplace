@@ -145,18 +145,15 @@ app.use(async (req, res, next) => {
   =========================
 */
 
-// Normal users only (buyer/seller)
-function requireUser(req, res, next) {
+ function requireUser(req, res, next) {
   if (!req.session.user) {
-     return res.redirect(url("/login"));
+    return res.redirect(url("/login"));
   }
 
-  if (req.session.user.is_admin === 1) {
-    return res.redirect(url("/admin"));
-  }
-
+  // allow BOTH normal users and admins
   next();
 }
+
 
 // Admin only
 function requireAdmin(req, res, next) {
@@ -719,7 +716,7 @@ app.get("/seller/items/:id/edit", requireUser, async (req, res) => {
       `
       SELECT *
       FROM items
-      WHERE id = ? AND seller_id = ?
+WHERE id = ?
       LIMIT 1
       `,
       [itemId, sellerId]
@@ -732,10 +729,6 @@ app.get("/seller/items/:id/edit", requireUser, async (req, res) => {
 
     const item = items[0];
 
-    // 2. Only allow editing of PENDING items
-    if (item.status !== "pending") {
-      return res.redirect(url("/seller"));
-    }
 
     // 3. Fetch item images
     const [images] = await db.execute(
@@ -773,7 +766,7 @@ app.post(
       const [items] = await db.execute(
         `
         SELECT * FROM items
-        WHERE id = ? AND seller_id = ? AND status = 'pending'
+WHERE id = ?
         LIMIT 1
         `,
         [itemId, sellerId]
@@ -792,6 +785,14 @@ app.post(
         `,
         [title, price, description, itemId]
       );
+
+      if (req.session.user.is_admin === 1) {
+  await db.execute(
+    "UPDATE items SET status='approved', rejection_reason=NULL WHERE id=?",
+    [itemId]
+  );
+}
+
 
       // 3. Remove selected images (if any)
       if (remove_images) {

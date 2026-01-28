@@ -138,10 +138,17 @@
               <div class="d-flex gap-2">
 
                 <a
-                  href="/items/<%= item.id %>"
-                  class="btn btn-outline-primary btn-sm w-100">
-                  View
-                </a>
+  href="/items/<%= item.id %>"
+  class="btn btn-outline-primary btn-sm w-100">
+  View
+</a>
+
+<a
+  href="/seller/items/<%= item.id %>/edit"
+  class="btn btn-outline-secondary btn-sm w-100">
+  Edit
+</a>
+
 
                 <% if (item.status === 'pending') { %>
 
