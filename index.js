@@ -156,6 +156,19 @@ function requireAuth(req, res, next) {
   next();
 }
 
+// password strong
+function isStrongPassword(password) {
+  const minLength = 6;
+  const hasNumber = /\d/;
+  const hasSpecial = /[@$!%*?&]/;
+
+  return (
+    password.length >= minLength &&
+    hasNumber.test(password) &&
+    hasSpecial.test(password)
+  );
+}
+
 
 
 /*
@@ -490,14 +503,24 @@ app.post("/reset-password/:token", async (req, res) => {
 
   try {
 
-    // 1. Check passwords match
-    if (password !== confirm) {
-      return res.render("reset-password", {
-        error: "Passwords do not match.",
-        success: null,
-        token
-      });
-    }
+    // Check passwords match
+if (password !== confirm) {
+  return res.render("reset-password", {
+    error: "Passwords do not match.",
+    success: null,
+    token
+  });
+}
+
+// Password strength
+if (!isStrongPassword(password)) {
+  return res.render("reset-password", {
+    error: "Password must be at least 6 characters and include 1 number and 1 special character.",
+    success: null,
+    token
+  });
+}
+
 
     // 2. Hash password
     const hashed = await bcrypt.hash(password, 10);
@@ -1216,6 +1239,13 @@ app.post("/register", async (req, res) => {
     }
 
     if (password !== confirm_password) {
+      if (!isStrongPassword(password)) {
+  return res.render("register", {
+    error: "Password must be at least 6 characters and include 1 number and 1 special character.",
+    formData: { full_name, email }
+  });
+}
+
       return res.render("register", {
         error: "Passwords do not match.",
         formData: { full_name, email }
