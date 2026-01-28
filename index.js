@@ -419,7 +419,7 @@ app.post("/forgot-password", async (req, res) => {
     // SECURITY: do NOT reveal if email exists
     if (!user) {
       return res.render("forgot-password", {
-        success: "If this email exists, a reset link has been sent.",
+  success: "If this email exists, a reset link has been sent.", 
         error: null
       });
     }
@@ -507,7 +507,7 @@ app.post("/reset-password/:token", async (req, res) => {
   }
 
   res.render("reset-password", {
-    success: "Password updated. You can login.",
+  success: "Password updated successfully. You can now login.",
     error: null,
     token
   });
