@@ -37,7 +37,11 @@
 
         <!-- Logged-in buyer information -->
         <span class="text-light small">
-          Logged in as <strong><%= currentUser.email %></strong>
+<% if (currentUser) { %>
+  Logged in as <strong><%= currentUser.email %></strong>
+<% } else { %>
+  <span class="text-light small">Browsing as Guest</span>
+<% } %>
         </span>
 
         <!-- Switch to seller dashboard -->
