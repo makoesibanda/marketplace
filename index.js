@@ -239,15 +239,15 @@ app.get("/register", (req, res) => {
 app.get("/buyer", requireUser, async (req, res) => {
   try {
     const q = req.query.q || "";
+    const category = req.query.category || "";
 
     let sql = `
-       SELECT
-  i.id,
-  i.title,
-  i.price,
-  i.description,
-  i.status,
-
+      SELECT
+        i.id,
+        i.title,
+        i.price,
+        i.description,
+        i.status,
         COALESCE(
           (
             SELECT image_path
@@ -260,23 +260,21 @@ app.get("/buyer", requireUser, async (req, res) => {
           '/images/seller_cover.png'
         ) AS cover_image
       FROM items i
-WHERE i.status IN ('approved', 'sold')
-
-
+      WHERE i.status IN ('approved', 'sold')
     `;
-const category = req.query.category || "";
-
-if (category) {
-  sql += " AND i.category_id = ?";
-  params.push(category);
-}
 
     const params = [];
 
-    // keyword search (SAME LOGIC AS SELLER)
+    // keyword search
     if (q) {
       sql += " AND (i.title LIKE ? OR i.description LIKE ?)";
       params.push(`%${q}%`, `%${q}%`);
+    }
+
+    // category filter
+    if (category) {
+      sql += " AND i.category_id = ?";
+      params.push(category);
     }
 
     sql += " ORDER BY i.created_at DESC";
@@ -285,7 +283,7 @@ if (category) {
 
     res.render("buyer", {
       items,
-      query: { q }
+      query: { q, category }
     });
 
   } catch (err) {
@@ -296,6 +294,7 @@ if (category) {
     });
   }
 });
+
 
 app.post("/items/:id/buy", requireUser, async (req, res) => {
   try {
