@@ -689,10 +689,18 @@ if (images.length === 0) {
     { image_path: "/images/seller_cover.png" }
   ];
 }
-const backUrl =
-  req.session.user.is_admin === 1
-    ? "/admin/items"
-    : "/buyer";
+let backUrl = "/buyer";
+
+// admin
+if (req.session.user.is_admin === 1) {
+  backUrl = "/admin/items";
+}
+
+// seller viewing own item
+if (item.seller_id === req.session.user.id) {
+  backUrl = "/seller";
+}
+
 
 res.render("item-view", {
   item,
