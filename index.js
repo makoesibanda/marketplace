@@ -991,7 +991,50 @@ app.get("/verify/:token", async (req, res) => {
     [rows[0].id]
   );
 
-  res.send("Email verified. You can now login.");
+res.send(`
+  <html>
+    <head>
+      <title>Email Verified</title>
+      <style>
+        body {
+          font-family: Arial;
+          background:#f5f5f5;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          height:100vh;
+        }
+
+        .box {
+          background:white;
+          padding:40px;
+          border-radius:8px;
+          box-shadow:0 0 15px rgba(0,0,0,.1);
+          text-align:center;
+        }
+
+        a {
+          display:inline-block;
+          margin-top:20px;
+          padding:10px 20px;
+          background:black;
+          color:white;
+          text-decoration:none;
+          border-radius:5px;
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="box">
+        <h2>Email Verified Successfully ✅</h2>
+        <p>Your account is now active.</p>
+
+        <a href="/login">Go to Login</a>
+      </div>
+    </body>
+  </html>
+`);
 });
 
 
