@@ -143,12 +143,17 @@
   View
 </a>
 
-<a
-  href="/admin/items/<%= item.id %>/edit"
-  class="btn btn-outline-secondary btn-sm w-100">
-  Edit
-</a>
-
+<% if (item.status === 'pending') { %>
+  <a href="/admin/items/<%= item.id %>/edit"
+     class="btn btn-outline-primary btn-sm w-100">
+    Edit
+  </a>
+<% } else { %>
+  <button class="btn btn-outline-secondary btn-sm w-100" disabled
+    title="Only pending items can be edited">
+    Edit
+  </button>
+<% } %>
 
 
                 <% if (item.status === 'pending') { %>
