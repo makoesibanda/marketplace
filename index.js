@@ -691,6 +691,16 @@ if (images.length === 0) {
 }
 let backUrl = "/buyer";
 
+// ADMIN FIRST (absolute priority)
+if (req.session.user.is_admin === 1) {
+  backUrl = "/admin/items";
+}
+
+// seller viewing own item (only if NOT admin)
+else if (item.seller_id === req.session.user.id) {
+  backUrl = "/seller";
+}
+
 // admin
 if (req.session.user.is_admin === 1) {
   backUrl = "/admin/items";
