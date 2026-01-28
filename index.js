@@ -503,21 +503,19 @@ app.post("/reset-password/:token", async (req, res) => {
 
   try {
 
-    // Check passwords match
-if (password !== confirm) {
-  return res.render("reset-password", {
+    // Passwords must match
+if (password !== confirm_password) {
+  return res.render("register", {
     error: "Passwords do not match.",
-    success: null,
-    token
+    formData: { full_name, email }
   });
 }
 
 // Password strength
 if (!isStrongPassword(password)) {
-  return res.render("reset-password", {
+  return res.render("register", {
     error: "Password must be at least 6 characters and include 1 number and 1 special character.",
-    success: null,
-    token
+    formData: { full_name, email }
   });
 }
 
