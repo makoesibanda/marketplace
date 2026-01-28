@@ -504,7 +504,7 @@ app.post("/reset-password/:token", async (req, res) => {
   try {
 
     // Passwords must match
-if (password !== confirm_password) {
+if (password !== confirm) {
   return res.render("register", {
     error: "Passwords do not match.",
     formData: { full_name, email }
@@ -1224,19 +1224,19 @@ FROM items;
   =========================
 */
 app.post("/register", async (req, res) => {
-  const { full_name, email, password, confirm_password } = req.body;
+  const { full_name, email, password, confirm } = req.body;
 
   try {
 
     // Validation
-    if (!full_name || !email || !password || !confirm_password) {
+    if (!full_name || !email || !password || !confirm) {
       return res.render("register", {
         error: "All fields are required.",
         formData: { full_name, email }
       });
     }
 
-    if (password !== confirm_password) {
+    if (password !== confirm) {
       if (!isStrongPassword(password)) {
   return res.render("register", {
     error: "Password must be at least 6 characters and include 1 number and 1 special character.",
