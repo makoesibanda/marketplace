@@ -652,69 +652,62 @@ app.get("/items/:id", async (req, res) => {
   try {
     const itemId = req.params.id;
 
-    // Fetch item details 
-const [[item]] = await db.execute(
-`
-SELECT
-  i.*,
-  u.email AS seller_email,
-  c.name AS category_name
-FROM items i
-JOIN users u ON i.seller_id = u.id
-LEFT JOIN categories c ON i.category_id = c.id
-WHERE i.id = ?
-LIMIT 1
-`,
-[itemId]
-);
-
-
-
+    // Fetch item
+    const [[item]] = await db.execute(
+      `
+      SELECT
+        i.*,
+        u.email AS seller_email,
+        c.name AS category_name
+      FROM items i
+      JOIN users u ON i.seller_id = u.id
+      LEFT JOIN categories c ON i.category_id = c.id
+      WHERE i.id = ?
+      LIMIT 1
+      `,
+      [itemId]
+    );
 
     if (!item) {
-      return res.redirect(url("/seller"));
+      return res.redirect(url("/buyer"));
     }
 
-    // all images
-  let [images] = await db.execute(
-  "SELECT image_path FROM item_images WHERE item_id = ?",
-  [itemId]
-);
+    // Fetch images
+    let [images] = await db.execute(
+      "SELECT image_path FROM item_images WHERE item_id = ?",
+      [itemId]
+    );
 
-// IMPORTANT: fallback for items with no images
-if (images.length === 0) {
-  images = [
-    { image_path: "/images/seller_cover.png" }
-  ];
-}
-let backUrl = "/buyer";
+    // Fallback image
+    if (images.length === 0) {
+      images = [{ image_path: "/images/seller_cover.png" }];
+    }
 
-if (req.session.user) {
-  if (req.session.user.is_admin === 1) {
-    backUrl = "/admin/items";
-  } else if (item.seller_id === req.session.user.id) {
-    backUrl = "/seller";
-  }
-}
+    // Default back button (guest / buyer)
+    let backUrl = "/buyer";
 
- 
+    // Logged in logic
+    if (req.session.user) {
 
-// seller viewing own item
-if (item.seller_id === req.session.user.id) {
-  backUrl = "/seller";
-}
+      // Admin
+      if (req.session.user.is_admin === 1) {
+        backUrl = "/admin/items";
 
+      // Seller viewing own item
+      } else if (item.seller_id === req.session.user.id) {
+        backUrl = "/seller";
+      }
+    }
 
-res.render("item-view", {
-  item,
-  images,
-  backUrl
-});
-
+    res.render("item-view", {
+      item,
+      images,
+      backUrl
+    });
 
   } catch (err) {
-    console.error(err);
-    res.redirect(url("/seller"));
+    console.error("Item view error:", err);
+    res.redirect(url("/buyer"));
   }
 });
 
