@@ -70,6 +70,16 @@
       </p>
     </div>
 
+    <form method="GET">
+  <select name="category" onchange="this.form.submit()">
+    <option value="">All Categories</option>
+    <% categories.forEach(c => { %>
+      <option value="<%= c.id %>"><%= c.name %></option>
+    <% }) %>
+  </select>
+</form>
+
+
     <!--
       SEARCH FORM
       Allows buyers to filter approved items by keyword

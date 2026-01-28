@@ -466,6 +466,15 @@
                 <input type="text" class="form-control" name="title" required>
               </div>
 
+              
+              <select name="category_id" required class="form-select">
+  <option value="">Select category</option>
+  <% categories.forEach(c => { %>
+    <option value="<%= c.id %>"><%= c.name %></option>
+  <% }) %>
+</select>
+
+
               <div class="col-md-6">
                 <label class="form-label">Price</label>
                 <input type="number" step="0.01" class="form-control" name="price" required>

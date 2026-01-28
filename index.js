@@ -120,7 +120,16 @@ app.use((req, res, next) => {
   next();
 });
 
-
+// carteforyy
+app.use(async (req, res, next) => {
+  try {
+    const [cats] = await db.execute("SELECT * FROM categories ORDER BY name");
+    res.locals.categories = cats;
+  } catch {
+    res.locals.categories = [];
+  }
+  next();
+});
 
 /*
   =========================
@@ -251,9 +260,16 @@ app.get("/buyer", requireUser, async (req, res) => {
           '/images/seller_cover.png'
         ) AS cover_image
       FROM items i
-      WHERE i.status IN ('approved', 'sold')
+WHERE i.status IN ('approved', 'sold')
+
 
     `;
+const category = req.query.category || "";
+
+if (category) {
+  sql += " AND i.category_id = ?";
+  params.push(category);
+}
 
     const params = [];
 
@@ -566,36 +582,41 @@ app.post(
   upload.array("images"),
   async (req, res) => {
     try {
-      const {
-        title,
-        description,
-        price,
-        phone,
-        location
-      } = req.body;
+     const {
+  title,
+  description,
+  price,
+  phone,
+  location,
+  category_id
+} = req.body;
+
 
       const sellerId = req.session.user.id;
 
       // Basic validation
-      if (!title || !description || !price) {
-        return res.send("Missing required fields");
-      }
+      if (!title || !description || !price || !category_id) {
+  return res.send("Missing required fields");
+}
 
       // Insert item including contact details
       const [result] = await db.execute(
         `
         INSERT INTO items
-          (seller_id, title, description, price, phone, location)
+(seller_id, title, description, price, phone, location, category_id)
+
         VALUES
           (?, ?, ?, ?, ?, ?)
         `,
         [
           sellerId,
-          title,
-          description,
-          price,
-          phone || null,
-          location || null
+title,
+description,
+price,
+phone || null,
+location || null,
+category_id
+
         ]
       );
 
