@@ -986,6 +986,69 @@ app.get("/admin/items", requireAdmin, async (req, res) => {
   }
 });
 
+//admin
+app.get("/admin/categories", requireAdmin, async (req, res) => {
+  try {
+    const [categories] = await db.execute(
+      "SELECT * FROM categories ORDER BY name ASC"
+    );
+
+    res.render("admin-categories", { categories });
+
+  } catch (err) {
+    console.error(err);
+    res.redirect(url("/admin"));
+  }
+});
+
+app.post("/admin/categories/create", requireAdmin, async (req, res) => {
+  const { name } = req.body;
+
+  if (!name) return res.redirect(url("/admin/categories"));
+
+  try {
+    await db.execute(
+      "INSERT INTO categories (name) VALUES (?)",
+      [name]
+    );
+
+    res.redirect(url("/admin/categories"));
+
+  } catch (err) {
+    console.error(err);
+    res.redirect(url("/admin/categories"));
+  }
+});
+
+app.post("/admin/categories/:id/delete", requireAdmin, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const [[count]] = await db.execute(
+      "SELECT COUNT(*) AS total FROM items WHERE category_id = ?",
+      [id]
+    );
+
+    if (count.total > 0) {
+      return res.send("Cannot delete category with items.");
+    }
+
+    await db.execute("DELETE FROM categories WHERE id = ?", [id]);
+
+    res.redirect(url("/admin/categories"));
+
+  } catch (err) {
+    console.error(err);
+    res.redirect(url("/admin/categories"));
+  }
+});
+
+
+
+
+
+
+
 /*
 =========================
 EMAIL VERIFICATION
