@@ -484,33 +484,57 @@ app.get("/reset-password/:token", async (req, res) => {
 
 
 app.post("/reset-password/:token", async (req, res) => {
-  const { password } = req.body;
+
+  const { password, confirm } = req.body;
   const token = req.params.token;
 
-  const hashed = await bcrypt.hash(password, 10);
+  try {
 
-  const [result] = await db.execute(
-    `
-    UPDATE users
-    SET password=?, reset_token=NULL, reset_expires=NULL
-    WHERE reset_token=? AND reset_expires > NOW()
-    `,
-    [hashed, token]
-  );
+    // 1. Check passwords match
+    if (password !== confirm) {
+      return res.render("reset-password", {
+        error: "Passwords do not match.",
+        success: null,
+        token
+      });
+    }
 
-  if (!result.affectedRows) {
-    return res.render("reset-password", {
-      error: "Link expired.",
+    // 2. Hash password
+    const hashed = await bcrypt.hash(password, 10);
+
+    // 3. Update user
+    const [result] = await db.execute(
+      `
+      UPDATE users
+      SET password=?, reset_token=NULL, reset_expires=NULL
+      WHERE reset_token=? AND reset_expires > NOW()
+      `,
+      [hashed, token]
+    );
+
+    if (!result.affectedRows) {
+      return res.render("reset-password", {
+        error: "Link expired or invalid.",
+        success: null,
+        token
+      });
+    }
+
+    // 4. Success
+    res.render("reset-password", {
+      success: "Password updated successfully. You can now login.",
+      error: null,
+      token
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.render("reset-password", {
+      error: "Something went wrong.",
       success: null,
       token
     });
   }
-
-  res.render("reset-password", {
-  success: "Password updated successfully. You can now login.",
-    error: null,
-    token
-  });
 });
 
 
