@@ -606,7 +606,7 @@ app.post(
 (seller_id, title, description, price, phone, location, category_id)
 
         VALUES
-          (?, ?, ?, ?, ?, ?)
+          (?, ?, ?, ?, ?, ?, ?)
         `,
         [
           sellerId,
