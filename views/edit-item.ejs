@@ -6,236 +6,210 @@
 
   <title>Edit Item | Marketplace</title>
 
-  <!-- Bootstrap for layout, grid system, and components -->
+  <!-- Bootstrap -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
 
-  <!-- Application-specific styling -->
-  <link rel="stylesheet" href="/style.css">
+  <!-- App Styles -->
+  <link rel="stylesheet" href="<%= BASE_PATH %>/style.css">
 </head>
+
 <body>
 
-  <!--
-    NAVIGATION BAR
-    Provides branding and quick navigation back to seller dashboard
-  -->
-  <nav class="navbar navbar-dark bg-dark">
-    <div class="container d-flex justify-content-between align-items-center">
+<!-- ======================
+NAVBAR
+====================== -->
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container d-flex justify-content-between align-items-center">
 
-      <!-- Marketplace brand -->
-      <a class="navbar-brand" href="/">
-        Marketplace
+    <a class="navbar-brand" href="/">
+      Marketplace
+    </a>
+
+    <div class="d-flex gap-2">
+
+      <% const backUrl = isAdminEdit ? "/admin/items" : "/seller"; %>
+
+      <a href="<%= backUrl %>" class="btn btn-outline-light btn-sm">
+        Back
       </a>
 
-      <!-- Navigation actions -->
-      <div class="d-flex gap-3">
-        <a href="/seller" class="btn btn-secondary btn-sm">
-          Back
-        </a>
-
-        <a href="/logout" class="btn btn-outline-light btn-sm">
-          Logout
-        </a>
-      </div>
+      <a href="/logout" class="btn btn-outline-light btn-sm">
+        Logout
+      </a>
 
     </div>
-  </nav>
-
-  <!-- MAIN CONTENT -->
-  <div class="container mt-4 mb-5">
-
-    <!-- PAGE HEADER -->
-    <h2 class="fw-bold mb-1">
-      Edit Item
-    </h2>
-
-    <p class="text-muted mb-4">
-      You can edit this item while it is pending approval.
-    </p>
-
-    <!--
-      EDIT FORM
-      Submits updated item data and optional new images.
-      Only pending items are allowed to reach this page.
-    -->
-    <form
-      method="POST"
-      action="/seller/items/<%= item.id %>/edit"
-      enctype="multipart/form-data"
-    >
-
-      <!-- BASIC ITEM DETAILS -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-
-          <div class="row g-3">
-
-            <!-- Title field -->
-            <div class="col-md-6">
-              <label class="form-label">
-                Title
-              </label>
-
-              <input
-                type="text"
-                class="form-control"
-                name="title"
-                value="<%= item.title %>"
-                required
-              >
-            </div>
-
-            <!-- Price field -->
-            <div class="col-md-6">
-              <label class="form-label">
-                Price (£)
-              </label>
-
-              <input
-                type="number"
-                step="0.01"
-                class="form-control"
-                name="price"
-                value="<%= item.price %>"
-                required
-              >
-            </div>
-
-            <!-- Description field -->
-            <div class="col-12">
-              <label class="form-label">
-                Description
-              </label>
-
-              <textarea
-                class="form-control"
-                name="description"
-                rows="4"
-                required
-              ><%= item.description %></textarea>
-            </div>
-
-          </div>
-
-        </div>
-      </div>
-
-      <!--
-        EXISTING IMAGES SECTION
-        Allows seller to view and optionally remove current images.
-        Removal is handled via checkbox selection.
-      -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold">
-          Existing Images
-        </div>
-
-        <div class="card-body">
-
-          <% if (images.length === 0) { %>
-
-            <!-- No images state -->
-            <p class="text-muted mb-0">
-              No images uploaded for this item.
-            </p>
-
-          <% } else { %>
-
-            <div class="row g-3">
-
-              <% images.forEach(img => { %>
-                <div class="col-6 col-md-4">
-
-                  <div class="border rounded p-2 text-center">
-
-                    <!-- Image preview -->
-                    <div class="item-image-frame mb-2">
-                      <img
-                        src="<%= BASE_PATH + img.image_path %>"
-                        class="card-img-top"
-                        alt="Item image"
-                      >
-                    </div>
-
-                    <!-- Remove checkbox -->
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        name="remove_images"
-                        value="<%= img.id %>"
-                        id="remove_<%= img.id %>"
-                      >
-
-                      <label
-                        class="form-check-label small"
-                        for="remove_<%= img.id %>"
-                      >
-                        Remove
-                      </label>
-                    </div>
-
-                  </div>
-
-                </div>
-              <% }) %>
-
-            </div>
-
-          <% } %>
-
-        </div>
-      </div>
-
-      <!--
-        NEW IMAGE UPLOAD SECTION
-        Allows seller to add additional images to the listing.
-      -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold">
-          Add New Images
-        </div>
-
-        <div class="card-body">
-
-          <input
-            type="file"
-            class="form-control"
-            name="images"
-            accept="image/*"
-            multiple
-          >
-
-          <div class="text-muted small mt-2">
-            Upload only necessary images. Clear images increase approval chances.
-          </div>
-
-        </div>
-      </div>
-
-      <!-- FORM ACTIONS -->
-      <div class="d-flex justify-content-between">
-
-        <!-- Cancel and return to seller dashboard -->
-        <a href="/seller" class="btn btn-outline-secondary">
-          Cancel
-        </a>
-
-        <!-- Submit updated data -->
-        <button type="submit" class="btn btn-primary">
-          Save Changes & Resubmit
-        </button>
-
-      </div>
-
-    </form>
 
   </div>
+</nav>
 
-  <!-- Bootstrap JavaScript bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- ======================
+MAIN CONTENT
+====================== -->
+<div class="container mt-4 mb-5">
+
+<h2 class="fw-bold">Edit Item</h2>
+
+<p class="text-muted mb-4">
+  Modify listing details and images.
+</p>
+
+<!-- ======================
+EDIT FORM
+====================== -->
+<form
+  method="POST"
+  action="<%= isAdminEdit ? ('/admin/items/' + item.id + '/edit') : ('/seller/items/' + item.id + '/edit') %>"
+  enctype="multipart/form-data"
+>
+
+<!-- BASIC DETAILS -->
+<div class="card shadow-sm mb-4">
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-6">
+<label class="form-label">Title</label>
+<input
+  type="text"
+  class="form-control"
+  name="title"
+  value="<%= item.title %>"
+  required>
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Price (£)</label>
+<input
+  type="number"
+  step="0.01"
+  class="form-control"
+  name="price"
+  value="<%= item.price %>"
+  required>
+</div>
+
+<div class="col-12">
+<label class="form-label">Description</label>
+<textarea
+  class="form-control"
+  name="description"
+  rows="4"
+  required><%= item.description %></textarea>
+</div>
+
+</div>
+
+</div>
+</div>
+
+<!-- ======================
+EXISTING IMAGES
+====================== -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header fw-semibold">
+Existing Images
+</div>
+
+<div class="card-body">
+
+<% if (images.length === 0) { %>
+
+<p class="text-muted">No images uploaded.</p>
+
+<% } else { %>
+
+<div class="row g-3">
+
+<% images.forEach(img => { %>
+
+<div class="col-6 col-md-4">
+
+<div class="border rounded p-2 text-center">
+
+<img
+src="<%= BASE_PATH + img.image_path %>"
+class="img-fluid rounded mb-2"
+style="max-height:150px;object-fit:cover">
+
+<div class="form-check">
+<input
+class="form-check-input"
+type="checkbox"
+name="remove_images"
+value="<%= img.id %>"
+id="remove_<%= img.id %>">
+
+<label
+class="form-check-label small"
+for="remove_<%= img.id %>">
+Remove
+</label>
+</div>
+
+</div>
+
+</div>
+
+<% }) %>
+
+</div>
+
+<% } %>
+
+</div>
+</div>
+
+<!-- ======================
+UPLOAD NEW IMAGES
+====================== -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header fw-semibold">
+Add New Images
+</div>
+
+<div class="card-body">
+
+<input
+type="file"
+class="form-control"
+name="images"
+accept="image/*"
+multiple>
+
+<p class="small text-muted mt-2">
+Upload clear images only.
+</p>
+
+</div>
+
+</div>
+
+<!-- ======================
+FORM ACTIONS
+====================== -->
+<div class="d-flex justify-content-between">
+
+<a href="<%= backUrl %>" class="btn btn-outline-secondary">
+Cancel
+</a>
+
+<button type="submit" class="btn btn-primary">
+Save Changes
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

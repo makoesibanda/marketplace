@@ -1066,6 +1066,109 @@ app.post("/admin/categories/:id/delete", requireAdmin, async (req, res) => {
 
 
 
+app.get("/admin/items/:id/edit", requireAdmin, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+
+    const [[item]] = await db.execute(
+      `
+      SELECT i.*, u.email AS seller_email
+      FROM items i
+      JOIN users u ON i.seller_id = u.id
+      WHERE i.id = ?
+      LIMIT 1
+      `,
+      [itemId]
+    );
+
+    if (!item) return res.redirect(url("/admin/items"));
+
+    const [images] = await db.execute(
+      "SELECT id, image_path FROM item_images WHERE item_id = ?",
+      [itemId]
+    );
+
+    // Reuse the same edit page, but tell it admin mode
+    res.render("edit-item", {
+      item,
+      images,
+      isAdminEdit: true
+    });
+
+  } catch (err) {
+    console.error("Admin edit item GET error:", err);
+    res.redirect(url("/admin/items"));
+  }
+});
+
+
+app.post(
+  "/admin/items/:id/edit",
+  requireAdmin,
+  upload.array("images"),
+  async (req, res) => {
+    const itemId = req.params.id;
+    const { title, price, description, remove_images } = req.body;
+
+    try {
+      // Make sure item exists
+      const [[item]] = await db.execute(
+        "SELECT id FROM items WHERE id = ? LIMIT 1",
+        [itemId]
+      );
+
+      if (!item) return res.redirect(url("/admin/items"));
+
+      // Update item
+      await db.execute(
+        `
+        UPDATE items
+        SET title = ?, price = ?, description = ?
+        WHERE id = ?
+        `,
+        [title, price, description, itemId]
+      );
+
+      // Remove selected images
+      if (remove_images) {
+        const imagesToRemove = Array.isArray(remove_images)
+          ? remove_images
+          : [remove_images];
+
+        await db.execute(
+          `
+          DELETE FROM item_images
+          WHERE id IN (${imagesToRemove.map(() => "?").join(",")})
+            AND item_id = ?
+          `,
+          [...imagesToRemove, itemId]
+        );
+      }
+
+      // Add new images
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const imagePath = "/uploads/items/" + file.filename;
+
+          await db.execute(
+            `
+            INSERT INTO item_images (item_id, image_path)
+            VALUES (?, ?)
+            `,
+            [itemId, imagePath]
+          );
+        }
+      }
+
+      // Back to admin items list
+      res.redirect(url("/admin/items"));
+
+    } catch (err) {
+      console.error("Admin edit item POST error:", err);
+      res.redirect(url("/admin/items"));
+    }
+  }
+);
 
 
 /*
