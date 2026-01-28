@@ -784,8 +784,9 @@ const { title, price, description, category_id, remove_images } = req.body;
 `
 SELECT *
 FROM items
-WHERE id = ? AND seller_id = ?
+WHERE id = ? AND seller_id = ? AND status = 'pending'
 LIMIT 1
+
 `,
 [itemId, sellerId]
 );
@@ -1095,7 +1096,7 @@ app.get("/admin/items/:id/edit", requireAdmin, async (req, res) => {
       SELECT i.*, u.email AS seller_email
       FROM items i
       JOIN users u ON i.seller_id = u.id
-      WHERE i.id = ?
+WHERE i.id = ? AND i.status = 'pending'
       LIMIT 1
       `,
       [itemId]
@@ -1141,7 +1142,7 @@ const { title, price, description, category_id, remove_images } = req.body;
     try {
       // Make sure item exists
       const [[item]] = await db.execute(
-        "SELECT id FROM items WHERE id = ? LIMIT 1",
+        "SELECT id FROM items WHERE id = ? AND status = 'pending' LIMIT 1",
         [itemId]
       );
 
