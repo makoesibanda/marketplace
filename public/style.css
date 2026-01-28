@@ -199,27 +199,3 @@ nav a {
 
 }
 
-/* ===========================
-RESPONSIVE DEBUG COLORS
-=========================== */
-
-/* Desktop */
-@media (min-width: 1024px) {
-  body {
-    background: #e6f7ff; /* light blue */
-  }
-}
-
-/* Tablet */
-@media (max-width: 1023px) and (min-width: 768px) {
-  body {
-    background: #fff4e6; /* light orange */
-  }
-}
-
-/* Mobile */
-@media (max-width: 767px) {
-  body {
-    background: #e6ffe6; /* light green */
-  }
-}
