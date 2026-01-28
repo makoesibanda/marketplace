@@ -215,16 +215,14 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/explore", (req, res) => {
-  if (!req.session.user) {
-    return res.redirect(url("/login"));
-  }
-
-  if (req.session.user.is_admin === 1) {
+  if (req.session.user && req.session.user.is_admin === 1) {
     return res.redirect(url("/admin"));
   }
 
   res.redirect(url("/buyer"));
 });
+
+
 
 app.get("/login", (req, res) => {
   res.render("login");
