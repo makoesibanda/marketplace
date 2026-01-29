@@ -1833,6 +1833,112 @@ app.get("/checkout", (req, res) => {
 });
 
 
+app.get("/checkout", requireAuth, (req,res)=>{
+
+const cart = req.session.cart || {};
+const items = Object.values(cart);
+
+if(items.length === 0){
+  return res.redirect("/buyer");
+}
+
+let total = 0;
+items.forEach(i=>{
+  total += i.price * i.qty;
+});
+
+res.render("checkout",{
+  items,
+  total
+});
+
+});
+
+
+app.post("/checkout/pay", requireAuth, async (req,res)=>{
+
+try{
+
+const { full_name, phone, address, city, postcode } = req.body;
+const cart = req.session.cart;
+
+if(!cart || Object.keys(cart).length===0){
+  return res.redirect("/buyer");
+}
+
+const items = Object.values(cart);
+
+let total = 0;
+items.forEach(i=>{
+  total += i.price * i.qty;
+});
+
+// Create order
+const [result] = await db.execute(`
+INSERT INTO orders
+(user_id,full_name,phone,address,city,postcode,total)
+VALUES(?,?,?,?,?,?,?)
+`,
+[
+req.session.user.id,
+full_name,
+phone,
+address,
+city,
+postcode,
+total
+]);
+
+const orderId = result.insertId;
+
+// Save order items
+for(const i of items){
+await db.execute(`
+INSERT INTO order_items(order_id,item_id,price,qty)
+VALUES(?,?,?,?)
+`,
+[orderId,i.id,i.price,i.qty]);
+}
+
+// Email confirmation
+let itemList = items.map(i=>`${i.title} x${i.qty}`).join("<br>");
+
+await transporter.sendMail({
+to:req.session.user.email,
+subject:"Order Confirmation",
+html:`
+<h3>Order Confirmed</h3>
+
+<p>${itemList}</p>
+
+<p>Total: £${total.toFixed(2)}</p>
+
+<p>Delivery to:</p>
+${full_name}<br>
+${address}<br>
+${city}<br>
+${postcode}
+
+<p>Expected delivery: ${new Date(Date.now()+172800000).toDateString()}</p>
+`
+});
+
+// Clear cart
+req.session.cart = {};
+
+res.send(`
+<h2>Order placed successfully</h2>
+<a href="/buyer">Back to marketplace</a>
+`);
+
+}catch(err){
+console.error("Checkout error:",err);
+res.send("Checkout failed");
+}
+
+});
+
+
 /*
   =========================
   LOGOUT (ADMIN + USERS)
