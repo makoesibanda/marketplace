@@ -1676,7 +1676,10 @@ app.post("/login", async (req, res) => {
       is_admin: 0
     };
 
-    res.redirect(url("/buyer"));
+const redirectTo = req.session.returnTo || "/buyer";
+delete req.session.returnTo;
+
+res.redirect(url(redirectTo));
   } catch (err) {
     console.error(err);
     res.render("login", {
@@ -1756,6 +1759,44 @@ app.post("/cart/add/:id", async (req, res) => {
 });
 
 
+
+// UPDATE CART QTY
+app.post("/cart/update/:id", (req, res) => {
+
+  const id = req.params.id;
+  const { action } = req.body;
+
+  if (!req.session.cart || !req.session.cart[id]) {
+    return res.redirect("/cart");
+  }
+
+  if (action === "increase") {
+    req.session.cart[id].qty++;
+  }
+
+  if (action === "decrease") {
+    req.session.cart[id].qty--;
+
+    if (req.session.cart[id].qty <= 0) {
+      delete req.session.cart[id];
+    }
+  }
+
+  res.redirect("back");
+});
+
+// REMOVE ITEM FROM CART
+app.post("/cart/remove/:id", (req, res) => {
+
+  if (req.session.cart) {
+    delete req.session.cart[req.params.id];
+  }
+
+  res.redirect("back");
+});
+
+
+
 // VIEW CART
 app.get("/cart", (req, res) => {
 
@@ -1774,6 +1815,18 @@ app.get("/cart", (req, res) => {
     items,
     total
   });
+});
+
+
+// CHECKOUT (LOGIN REQUIRED)
+app.get("/checkout", (req, res) => {
+
+  if (!req.session.user) {
+    req.session.returnTo = "/checkout";
+    return res.redirect("/login");
+  }
+
+  res.send("Checkout coming soon boss 🔥");
 });
 
 
