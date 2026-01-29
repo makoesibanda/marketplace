@@ -1736,16 +1736,19 @@ app.post("/cart/add/:id", async (req, res) => {
     }
 
     // If already in cart, increase qty
-    if (req.session.cart[itemId]) {
-      req.session.cart[itemId].qty += 1;
-    } else {
+   if (req.session.cart[itemId]) {
+  req.session.cart[itemId].qty += 1;
+  req.session.cart[itemId].price = Number(item.price);
+}
+else {
       req.session.cart[itemId] = {
-        id: item.id,
-        title: item.title,
-        price: item.price,
-        image: item.cover_image,
-        qty: 1
-      };
+  id: item.id,
+  title: item.title,
+  price: Number(item.price),
+  image: item.cover_image,
+  qty: 1
+};
+
     }
 
     req.session.flash = { success: "Item added to cart." };
