@@ -1756,6 +1756,25 @@ app.post("/cart/add/:id", async (req, res) => {
 });
 
 
+// VIEW CART
+app.get("/cart", (req, res) => {
+
+  const cart = req.session.cart || {};
+
+  // Convert object to array
+  const items = Object.values(cart);
+
+  // Calculate total
+  let total = 0;
+  items.forEach(i => {
+    total += i.price * i.qty;
+  });
+
+  res.render("cart", {
+    items,
+    total
+  });
+});
 
 
 /*
