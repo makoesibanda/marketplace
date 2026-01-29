@@ -1914,12 +1914,10 @@ ${postcode}
 });
 
 // Clear cart
-req.session.cart = {};
+delete req.session.cart;
 
-res.send(`
-<h2>Order placed successfully</h2>
-<a href="/buyer">Back to marketplace</a>
-`);
+res.render("order-success");
+
 
 }catch(err){
 console.error("Checkout error:",err);
