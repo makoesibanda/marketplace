@@ -1821,16 +1821,6 @@ app.get("/cart", (req, res) => {
 });
 
 
-// CHECKOUT (LOGIN REQUIRED)
-app.get("/checkout", (req, res) => {
-
-  if (!req.session.user) {
-    req.session.returnTo = "/checkout";
-    return res.redirect("/login");
-  }
-
-  res.send("Checkout coming soon boss 🔥");
-});
 
 
 app.get("/checkout", requireAuth, (req,res)=>{
