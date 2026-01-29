@@ -1685,6 +1685,79 @@ app.post("/login", async (req, res) => {
   }
 });
 
+
+
+// CART addtion 
+
+app.post("/cart/add/:id", async (req, res) => {
+  try {
+    const itemId = req.params.id;
+
+    // Fetch item (ONLY approved items)
+    const [[item]] = await db.execute(
+      `
+      SELECT
+        i.id,
+        i.title,
+        i.price,
+        i.seller_id,
+        COALESCE(
+          (
+            SELECT image_path
+            FROM item_images
+            WHERE item_id = i.id
+            LIMIT 1
+          ),
+          '/images/seller_cover.png'
+        ) AS cover_image
+      FROM items i
+      WHERE i.id = ? AND i.status = 'approved'
+      LIMIT 1
+      `,
+      [itemId]
+    );
+
+    if (!item) {
+      return res.redirect(url("/buyer"));
+    }
+
+    // Prevent seller adding own item
+    if (req.session.user && req.session.user.id === item.seller_id) {
+      req.session.flash = { error: "You cannot buy your own item." };
+      return res.redirect(url("/buyer"));
+    }
+
+    // Initialize cart
+    if (!req.session.cart) {
+      req.session.cart = {};
+    }
+
+    // If already in cart, increase qty
+    if (req.session.cart[itemId]) {
+      req.session.cart[itemId].qty += 1;
+    } else {
+      req.session.cart[itemId] = {
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        image: item.cover_image,
+        qty: 1
+      };
+    }
+
+    req.session.flash = { success: "Item added to cart." };
+
+    res.redirect("back");
+
+  } catch (err) {
+    console.error("Add to cart error:", err);
+    res.redirect(url("/buyer"));
+  }
+});
+
+
+
+
 /*
   =========================
   LOGOUT (ADMIN + USERS)
