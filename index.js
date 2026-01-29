@@ -466,6 +466,7 @@ app.post("/forgot-password", async (req, res) => {
     const link = `${process.env.BASE_URL}/reset-password/${token}`;
 
     await transporter.sendMail({
+      from: '"Marketplace" <no-reply@marketplace>',
       to: email,
       subject: "Password Reset",
       html: `
@@ -1894,6 +1895,7 @@ VALUES(?,?,?,?)
 let itemList = items.map(i=>`${i.title} x${i.qty}`).join("<br>");
 
 await transporter.sendMail({
+from: '"Marketplace" <no-reply@marketplace>',
 to:req.session.user.email,
 subject:"Order Confirmation",
 html:`
