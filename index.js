@@ -1696,8 +1696,8 @@ res.redirect(url(redirectTo));
 app.post("/cart/add/:id", async (req, res) => {
   try {
     const itemId = req.params.id;
+    const key = String(itemId); // ALWAYS string key
 
-    // Fetch item (ONLY approved items)
     const [[item]] = await db.execute(
       `
       SELECT
@@ -1721,40 +1721,36 @@ app.post("/cart/add/:id", async (req, res) => {
       [itemId]
     );
 
-    if (!item) {
-      return res.redirect(url("/buyer"));
-    }
+    if (!item) return res.redirect(url("/buyer"));
 
     // Prevent seller adding own item
-    if (req.session.user && req.session.user.id === item.seller_id) {
+    if (req.session.user && Number(req.session.user.id) === Number(item.seller_id)) {
       req.session.flash = { error: "You cannot buy your own item." };
-      return res.redirect(url("/buyer"));
+      return res.redirect("back");
     }
 
-    // Initialize cart
-    if (!req.session.cart) {
-      req.session.cart = {};
-    }
+    // Ensure cart exists (keep your global cart middleware too)
+    if (!req.session.cart) req.session.cart = {};
 
-    // If already in cart, increase qty
-   if (req.session.cart[itemId]) {
-  req.session.cart[itemId].qty += 1;
-  req.session.cart[itemId].price = Number(item.price);
-}
-else {
-      req.session.cart[itemId] = {
-  id: item.id,
-  title: item.title,
-  price: Number(item.price),
-  image: item.cover_image,
-  qty: 1
-};
-
+    // If already in cart, increment qty
+    const existing = req.session.cart[key];
+    if (existing) {
+      existing.qty = Number(existing.qty || 0) + 1;
+      existing.price = Number(item.price);
+    } else {
+      req.session.cart[key] = {
+        id: Number(item.id),
+        title: item.title,
+        price: Number(item.price),
+        image: item.cover_image,
+        qty: 1
+      };
     }
 
     req.session.flash = { success: "Item added to cart." };
 
-    res.redirect("back");
+    // IMPORTANT: make sure session saves before redirect
+    req.session.save(() => res.redirect("back"));
 
   } catch (err) {
     console.error("Add to cart error:", err);
