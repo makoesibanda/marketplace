@@ -1,60 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Order Successful</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>Order Successful | Marketplace</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="<%= BASE_PATH %>/style.css">
+
 </head>
 
 <body class="bg-light">
 
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/">
+      Marketplace
+    </a>
+  </div>
+</nav>
+
 <div class="container py-5">
 
-  <div class="card shadow-sm mx-auto" style="max-width:600px">
+<div class="row justify-content-center">
 
-    <div class="card-body p-5 text-center">
+<div class="col-md-8 col-lg-6">
 
-      <h2 class="fw-bold text-success mb-3">
-        Order placed successfully ✅
-      </h2>
+<div class="card shadow-sm">
 
-      <p class="text-muted mb-3">
-        Thank you for your purchase. For security reasons, you are logged out.
-      </p>
+<div class="card-body p-5 text-center">
 
-      <% if (email) { %>
-        <p class="small text-muted">
-          Confirmation sent to<br>
-          <strong><%= email %></strong>
-        </p>
-      <% } else { %>
-        <p class="small text-muted">
-          A confirmation email has been sent.
-        </p>
-      <% } %>
+<h2 class="fw-bold text-success mb-3">
+Order placed successfully ✅
+</h2>
 
-      <hr class="my-4">
+<p class="text-muted mb-3">
+Thank you for your purchase. For security reasons, you have been logged out.
+</p>
 
-      <div class="d-grid gap-2">
+<% if (email) { %>
+<p class="small text-muted">
+Confirmation sent to<br>
+<strong><%= email %></strong>
+</p>
+<% } else { %>
+<p class="small text-muted">
+A confirmation email has been sent.
+</p>
+<% } %>
 
-        <a href="/buyer" class="btn btn-dark btn-lg">
-          Back to Marketplace
-        </a>
+<hr class="my-4">
 
-        <a href="/login" class="btn btn-outline-secondary">
-          Login again
-        </a>
+<div class="d-grid gap-2">
 
-      </div>
+<a href="/buyer" class="btn btn-dark btn-lg">
+Back to Marketplace
+</a>
 
-    </div>
-
-  </div>
+<a href="/login" class="btn btn-outline-secondary">
+Login again
+</a>
 
 </div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
