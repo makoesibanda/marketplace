@@ -165,8 +165,13 @@ function requireAdmin(req, res, next) {
 
 function requireAuth(req, res, next) {
   if (!req.session.user) {
+
+    // remember where user wanted to go
+    req.session.returnTo = req.originalUrl;
+
     return res.redirect(url("/login"));
   }
+
   next();
 }
 
