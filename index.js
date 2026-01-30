@@ -1689,15 +1689,7 @@ app.post("/cart/add/:id", async (req, res) => {
       - user is the seller
     */
 
-    if (
-      req.session.user &&
-      String(req.session.user.id) === String(item.seller_id) &&
-      item.status === "approved"
-    ) {
-      req.session.flash = { error: "You cannot buy your own item." };
-      return req.session.save(() => res.redirect("back"));
-    }
-
+   
     // create cart if missing
     if (!req.session.cart) req.session.cart = {};
 
