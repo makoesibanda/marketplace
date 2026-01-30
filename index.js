@@ -1715,7 +1715,7 @@ app.post("/cart/add/:id", async (req, res) => {
           '/images/seller_cover.png'
         ) AS cover_image
       FROM items i
-      WHERE i.id = ? AND i.status = 'approved'
+WHERE i.id = ? AND i.status IN ('approved','sold')
       LIMIT 1
       `,
       [itemId]
