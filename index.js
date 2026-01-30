@@ -1654,7 +1654,7 @@ res.redirect(url(redirectTo));
 app.post("/cart/add/:id", async (req, res) => {
   try {
     const itemId = req.params.id;
-    const key = String(itemId); // ALWAYS string key
+    const key = String(itemId);
 
     const [[item]] = await db.execute(
       `
@@ -1662,7 +1662,8 @@ app.post("/cart/add/:id", async (req, res) => {
         i.id,
         i.title,
         i.price,
-i.seller_id,
+        i.status,
+        i.seller_id,
         COALESCE(
           (
             SELECT image_path
@@ -1673,31 +1674,36 @@ i.seller_id,
           '/images/seller_cover.png'
         ) AS cover_image
       FROM items i
-WHERE i.id = ? AND i.status IN ('approved','sold')
+      WHERE i.id = ?
       LIMIT 1
       `,
       [itemId]
     );
 
-    if (!item) return res.redirect(url("/buyer"));
+    if (!item) return res.redirect("/buyer");
 
-    // Prevent seller adding own item
-   if (
-  req.session.user &&
-  Number(req.session.user.id) === Number(item.seller_id)
-) {
-  req.session.flash = { error: "You cannot buy your own item." };
-  return res.redirect("back");
-}
+    /*
+      BLOCK ONLY if:
+      - user is logged in
+      - item is still APPROVED (for sale)
+      - user is the seller
+    */
 
-    // Ensure cart exists (keep your global cart middleware too)
+    if (
+      req.session.user &&
+      String(req.session.user.id) === String(item.seller_id) &&
+      item.status === "approved"
+    ) {
+      req.session.flash = { error: "You cannot buy your own item." };
+      return req.session.save(() => res.redirect("back"));
+    }
+
+    // create cart if missing
     if (!req.session.cart) req.session.cart = {};
 
-    // If already in cart, increment qty
-    const existing = req.session.cart[key];
-    if (existing) {
-      existing.qty = Number(existing.qty || 0) + 1;
-      existing.price = Number(item.price);
+    // add / increase qty
+    if (req.session.cart[key]) {
+      req.session.cart[key].qty += 1;
     } else {
       req.session.cart[key] = {
         id: Number(item.id),
@@ -1710,15 +1716,13 @@ WHERE i.id = ? AND i.status IN ('approved','sold')
 
     req.session.flash = { success: "Item added to cart." };
 
-    // IMPORTANT: make sure session saves before redirect
     req.session.save(() => res.redirect("back"));
 
   } catch (err) {
     console.error("Add to cart error:", err);
-    res.redirect(url("/buyer"));
+    res.redirect("/buyer");
   }
 });
-
 
 
 // UPDATE CART QTY
