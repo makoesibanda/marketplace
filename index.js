@@ -620,24 +620,43 @@ app.get("/items/:id", async (req, res) => {
     const itemId = req.params.id;
 
     // Fetch item
-    const [[item]] = await db.execute(
-      `
-      SELECT
-        i.*,
-        u.email AS seller_email,
-        c.name AS category_name
-      FROM items i
-      JOIN users u ON i.seller_id = u.id
-      LEFT JOIN categories c ON i.category_id = c.id
-      WHERE i.id = ?
-      LIMIT 1
-      `,
-      [itemId]
-    );
+    const [[item]] = await db.execute(`
+SELECT
+  i.id,
+  i.title,
+  i.description,
+  i.price,
+  i.status,
+  i.phone,
+  i.location,
+  i.seller_id,
+  u.email AS seller_email,
+  c.name AS category_name
+FROM items i
+JOIN users u ON i.seller_id = u.id
+LEFT JOIN categories c ON i.category_id = c.id
+WHERE i.id = ?
+LIMIT 1
+`, [itemId]);
+
 
     if (!item) {
       return res.redirect(url("/buyer"));
     }
+
+    const canSeeSellerInfo =
+  req.session.user &&
+  (
+    req.session.user.is_admin === 1 ||
+    req.session.user.id === item.seller_id
+  );
+
+if (!canSeeSellerInfo) {
+  item.phone = null;
+  item.location = null;
+  item.seller_email = null;
+}
+
 
     // Fetch images
     let [images] = await db.execute(
