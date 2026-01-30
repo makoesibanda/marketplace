@@ -1704,7 +1704,8 @@ app.post("/cart/add/:id", async (req, res) => {
         i.id,
         i.title,
         i.price,
-        i.seller_id,
+i.seller_id,
+i.buyer_id,
         COALESCE(
           (
             SELECT image_path
@@ -1724,7 +1725,13 @@ WHERE i.id = ? AND i.status IN ('approved','sold')
     if (!item) return res.redirect(url("/buyer"));
 
     // Prevent seller adding own item
-    if (req.session.user && Number(req.session.user.id) === Number(item.seller_id)) {
+if (
+  req.session.user &&
+  Number(req.session.user.id) === Number(item.seller_id)
+) {
+  req.session.flash = { error: "You cannot buy your own item." };
+  return res.redirect("back");
+}
       req.session.flash = { error: "You cannot buy your own item." };
       return res.redirect("back");
     }
