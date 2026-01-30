@@ -86,24 +86,7 @@ Category: <strong><%= item.category_name || "Uncategorised" %></strong>
 
 <hr>
 
-<h6 class="fw-bold">Seller Contact</h6>
 
-<p class="mb-1">
-Email:
-<a href="mailto:<%= item.seller_email %>">
-<%= item.seller_email %>
-</a>
-</p>
-
-<% if(item.phone){ %>
-<p class="mb-1">Phone: <%= item.phone %></p>
-<% } %>
-
-<% if(item.location){ %>
-<p>Location: <%= item.location %></p>
-<% } %>
-
-<hr>
 
 <p class="small text-muted">
 Posted <%= new Date(item.created_at).toLocaleDateString() %>
