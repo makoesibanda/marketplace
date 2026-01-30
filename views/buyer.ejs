@@ -78,15 +78,21 @@
         Discover all items available on the marketplace
       </p>
     </div>
+<form method="GET" action="/buyer" class="mb-3">
+  <select name="category" class="form-select w-auto" onchange="this.form.submit()">
 
-    <form method="GET">
-  <select name="category" onchange="this.form.submit()">
     <option value="">All Categories</option>
+
     <% categories.forEach(c => { %>
-      <option value="<%= c.id %>"><%= c.name %></option>
+      <option value="<%= c.id %>"
+        <%= query.category == c.id ? "selected" : "" %>>
+        <%= c.name %>
+      </option>
     <% }) %>
+
   </select>
 </form>
+
 
 
     <!--
