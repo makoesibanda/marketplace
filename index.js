@@ -147,10 +147,13 @@ app.use(async (req, res, next) => {
 
  function requireUser(req, res, next) {
   if (!req.session.user) {
+
+    // save intended destination
+    req.session.returnTo = req.originalUrl;
+
     return res.redirect(url("/login"));
   }
 
-  // allow BOTH normal users and admins
   next();
 }
 
