@@ -1911,10 +1911,24 @@ ${postcode}
 `
 });
 
-// Clear cart
+ // Clear cart  
 delete req.session.cart;
 
-res.render("order-success");
+// Keep email for success page before session dies
+const buyerEmail = req.session.user.email;
+
+req.session.destroy((err) => {
+  if (err) {
+    console.error("Session destroy error:", err);
+    return res.render("order-success", { email: buyerEmail });
+  }
+
+  // clear cookie too (default is connect.sid)
+  res.clearCookie("connect.sid");
+
+  return res.render("order-success", { email: buyerEmail });
+});
+
 
 
 }catch(err){
