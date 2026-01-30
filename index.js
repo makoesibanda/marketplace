@@ -1892,13 +1892,21 @@ for (const sellerId in sellers) {
   await transporter.sendMail({
     from: '"Marketplace" <no-reply@marketplace>',
     to: seller.email,
-    subject: "New Order – Deliver items within 24 hours",
+    subject: "New Order - Deliver items within 24 hours",
     html: `
       <h3>You have a new sale!</h3>
 
       <p>Please bring the following items to the Marketplace office within <strong>24 hours</strong>:</p>
+      <p>Munderi Village</p>
+      <p>Ruware St</p>
+      <p>Zengeya 39B</p>
+
+      <p>=====================</p>
 
       <p>${list}</p>
+
+      <p>=====================</p>
+
 
       <p>After inspection, payment will be released to you.</p>
 
@@ -1918,7 +1926,13 @@ subject:"Order Confirmation",
 html:`
 <h3>Order Confirmed</h3>
 
+<p>=====================</p>
+
+
 <p>${itemList}</p>
+
+<p>=====================</p>
+
 
 <p>Total: £${total.toFixed(2)}</p>
 
