@@ -298,48 +298,6 @@ app.get("/buyer", async (req, res) => {
   }
 });
 
-
-app.post("/items/:id/buy", requireUser, async (req, res) => {
-  try {
-    const itemId = req.params.id;
-    const buyerId = req.session.user.id;
-
-    // Only approved items can be bought
-    const [items] = await db.execute(
-      `
-      SELECT id
-      FROM items
-      WHERE id = ? AND status = 'approved'
-      LIMIT 1
-      `,
-      [itemId]
-    );
-
-    if (items.length === 0) {
-      return res.redirect(url("/buyer"));
-    }
-
-    // Mark as sold
-    await db.execute(
-      `
-      UPDATE items
-      SET status = 'sold',
-          buyer_id = ?,
-          sold_at = NOW()
-      WHERE id = ?
-      `,
-      [buyerId, itemId]
-    );
-
-    res.redirect(url("/buyer"));
-
-  } catch (err) {
-    console.error("Buy item error:", err);
-    res.redirect(url("/buyer"));
-  }
-});
-
-
 app.get("/go-sell", requireUser, (req, res) => {
   res.redirect(url("/seller"));
 });
@@ -1705,7 +1663,6 @@ app.post("/cart/add/:id", async (req, res) => {
         i.title,
         i.price,
 i.seller_id,
-i.buyer_id,
         COALESCE(
           (
             SELECT image_path
