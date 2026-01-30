@@ -1725,16 +1725,13 @@ WHERE i.id = ? AND i.status IN ('approved','sold')
     if (!item) return res.redirect(url("/buyer"));
 
     // Prevent seller adding own item
-if (
+   if (
   req.session.user &&
   Number(req.session.user.id) === Number(item.seller_id)
 ) {
   req.session.flash = { error: "You cannot buy your own item." };
   return res.redirect("back");
 }
-      req.session.flash = { error: "You cannot buy your own item." };
-      return res.redirect("back");
-    }
 
     // Ensure cart exists (keep your global cart middleware too)
     if (!req.session.cart) req.session.cart = {};
