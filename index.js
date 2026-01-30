@@ -1852,6 +1852,62 @@ VALUES(?,?,?,?)
 [orderId,i.id,i.price,i.qty]);
 }
 
+// ===============================
+// EMAIL EACH SELLER
+// ===============================
+
+// Get seller grouped items
+const [sellerRows] = await db.execute(`
+SELECT 
+  i.seller_id,
+  u.email AS seller_email,
+  i.title,
+  oi.qty
+FROM order_items oi
+JOIN items i ON oi.item_id = i.id
+JOIN users u ON i.seller_id = u.id
+WHERE oi.order_id = ?
+`, [orderId]);
+
+// Group by seller
+const sellers = {};
+
+sellerRows.forEach(row => {
+  if (!sellers[row.seller_id]) {
+    sellers[row.seller_id] = {
+      email: row.seller_email,
+      items: []
+    };
+  }
+
+  sellers[row.seller_id].items.push(`${row.title} x${row.qty}`);
+});
+
+// Send email to each seller
+for (const sellerId in sellers) {
+
+  const seller = sellers[sellerId];
+  const list = seller.items.join("<br>");
+
+  await transporter.sendMail({
+    from: '"Marketplace" <no-reply@marketplace>',
+    to: seller.email,
+    subject: "New Order – Deliver items within 24 hours",
+    html: `
+      <h3>You have a new sale!</h3>
+
+      <p>Please bring the following items to the Marketplace office within <strong>24 hours</strong>:</p>
+
+      <p>${list}</p>
+
+      <p>After inspection, payment will be released to you.</p>
+
+      <p>Thank you,<br>Marketplace Team</p>
+    `
+  });
+}
+
+
 // Email confirmation
 let itemList = items.map(i=>`${i.title} x${i.qty}`).join("<br>");
 
